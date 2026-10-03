@@ -30,9 +30,10 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme(
                 colorScheme = lightColorScheme(
-                    primary = Color(0xFFE65100), // A warm street-food orange
-                    secondary = Color(0xFF2E7D32), // Fresh vegetable green
-                    surfaceVariant = Color(0xFFFFF3E0)
+                    primary = Color(0xFFE65100),
+                    secondary = Color(0xFF2E7D32),
+                    surfaceVariant = Color(0xFFFFF3E0),
+                    error = Color(0xFFD32F2F)
                 )
             ) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
@@ -68,29 +69,18 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit, onNavigateToSignup: () -> Unit
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Filled.Storefront,
-            contentDescription = "App Logo",
-            modifier = Modifier.size(80.dp),
-            tint = MaterialTheme.colorScheme.primary
-        )
+        Icon(Icons.Filled.Storefront, contentDescription = "App Logo", modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
         Text("Local Vends", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         Text("Your neighbourhood market, digitized.", style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
-
         Spacer(modifier = Modifier.height(32.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().selectableGroup().padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
+                Row(modifier = Modifier.fillMaxWidth().selectableGroup().padding(bottom = 16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(selected = selectedRole == "VENDOR", onClick = { selectedRole = "VENDOR" })
                         Text("Vendor", style = MaterialTheme.typography.bodyMedium)
@@ -100,44 +90,22 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit, onNavigateToSignup: () -> Unit
                         Text("Customer", style = MaterialTheme.typography.bodyMedium)
                     }
                 }
-
                 OutlinedTextField(
-                    value = phone,
-                    onValueChange = { phone = it; phoneError = false },
-                    label = { Text("Phone Number") },
-                    leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null) },
-                    singleLine = true,
-                    isError = phoneError,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    value = phone, onValueChange = { phone = it; phoneError = false }, label = { Text("Phone Number") },
+                    leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null) }, singleLine = true, isError = phoneError,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
                 )
-
                 Spacer(modifier = Modifier.height(12.dp))
-
                 OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Password") },
-                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
-                    singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.fillMaxWidth()
+                    value = password, onValueChange = { password = it }, label = { Text("Password") },
+                    leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) }, singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
                 )
-
                 Spacer(modifier = Modifier.height(24.dp))
-
                 Button(
-                    onClick = {
-                        if (phone.length == 10 && phone.all { it.isDigit() } && password.isNotBlank()) onLoginSuccess(selectedRole)
-                        else phoneError = true
-                    },
-                    modifier = Modifier.fillMaxWidth().height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Secure Login", fontSize = MaterialTheme.typography.titleMedium.fontSize)
-                }
+                    onClick = { if (phone.length == 10 && phone.all { it.isDigit() } && password.isNotBlank()) onLoginSuccess(selectedRole) else phoneError = true },
+                    modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(12.dp)
+                ) { Text("Secure Login", fontSize = MaterialTheme.typography.titleMedium.fontSize) }
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -147,7 +115,6 @@ fun LoginScreen(onLoginSuccess: (String) -> Unit, onNavigateToSignup: () -> Unit
 
 @Composable
 fun SignupScreen(onSignupSuccess: (String) -> Unit, onNavigateToLogin: () -> Unit) {
-    // Reusing the same polished design language for signup
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -155,24 +122,16 @@ fun SignupScreen(onSignupSuccess: (String) -> Unit, onNavigateToLogin: () -> Uni
     var selectedRole by remember { mutableStateOf("VENDOR") }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center
     ) {
         Text("Join Local Vends", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(24.dp))
-
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            modifier = Modifier.fillMaxWidth(), elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+            shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().selectableGroup().padding(bottom = 16.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
+                Row(modifier = Modifier.fillMaxWidth().selectableGroup().padding(bottom = 16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(selected = selectedRole == "VENDOR", onClick = { selectedRole = "VENDOR" })
                         Text("Vendor")
@@ -182,30 +141,16 @@ fun SignupScreen(onSignupSuccess: (String) -> Unit, onNavigateToLogin: () -> Uni
                         Text("Customer")
                     }
                 }
-
-                OutlinedTextField(
-                    value = name, onValueChange = { name = it }, label = { Text("Full Name") },
-                    singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name") }, singleLine = true, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = phone, onValueChange = { phone = it }, label = { Text("Phone") },
-                    singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-                    shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Phone") }, singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password, onValueChange = { password = it }, label = { Text("Password") },
-                    singleLine = true, visualTransformation = PasswordVisualTransformation(),
-                    shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
-                )
+                OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, singleLine = true, visualTransformation = PasswordVisualTransformation(), shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = { if (name.isNotBlank() && phone.length == 10 && password.isNotBlank()) onSignupSuccess(selectedRole) },
                     modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Create Account")
-                }
+                ) { Text("Create Account") }
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -221,6 +166,13 @@ data class Product(val id: Int, val name: String, val price: String, val descrip
 fun VendorAppMainScreen() {
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf("Catalogue", "Location", "Orders")
+
+    // HOISTED STATE: By moving the list here, it survives when the vendor clicks other tabs
+    val productList = remember { mutableStateListOf(
+        Product(1, "Fresh Vada Pav", "₹15", "Hot and spicy Mumbai style vada pav served with green chutney."),
+        Product(2, "Cutting Chai", "₹10", "Strong ginger tea, perfect for the evening."),
+        Product(3, "Misal Pav", "₹40", "Spicy sprout curry with bread, garnished with onions and farsan.")
+    )}
 
     Scaffold(
         topBar = {
@@ -247,7 +199,8 @@ fun VendorAppMainScreen() {
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                0 -> VendorCatalogueScreen()
+                // Pass the hoisted list down to the screen
+                0 -> VendorCatalogueScreen(productList)
                 1 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Map Integration Pending") }
                 2 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No Active Orders") }
             }
@@ -256,16 +209,78 @@ fun VendorAppMainScreen() {
 }
 
 @Composable
-fun VendorCatalogueScreen() {
-    val productList = listOf(
-        Product(1, "Fresh Vada Pav", "₹15", "Hot and spicy Mumbai style vada pav served with green chutney."),
-        Product(2, "Cutting Chai", "₹10", "Strong ginger tea, perfect for the evening."),
-        Product(3, "Misal Pav", "₹40", "Spicy sprout curry with bread, garnished with onions and farsan.")
-    )
+fun VendorCatalogueScreen(productList: MutableList<Product>) {
+    var showDialog by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf("") }
+    var newPrice by remember { mutableStateOf("") }
+    var newDesc by remember { mutableStateOf("") }
+
+    // Validation states
+    var nameError by remember { mutableStateOf(false) }
+    var priceError by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text("Add New Product") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = newName,
+                        onValueChange = { newName = it; nameError = false },
+                        label = { Text("Product Name") },
+                        isError = nameError,
+                        supportingText = { if (nameError) Text("Name cannot be empty") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    OutlinedTextField(
+                        value = newPrice,
+                        onValueChange = { newPrice = it; priceError = false },
+                        label = { Text("Price (e.g. 50)") },
+                        isError = priceError,
+                        supportingText = { if (priceError) Text("Enter a valid price") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = newDesc,
+                        onValueChange = { newDesc = it },
+                        label = { Text("Description (Optional)") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    val isNameValid = newName.isNotBlank()
+                    val isPriceValid = newPrice.isNotBlank()
+
+                    if (isNameValid && isPriceValid) {
+                        // Automatically format with Rupee symbol if not provided
+                        val formattedPrice = if (newPrice.startsWith("₹")) newPrice else "₹$newPrice"
+                        productList.add(Product(productList.size + 1, newName, formattedPrice, newDesc))
+
+                        // Reset fields
+                        newName = ""; newPrice = ""; newDesc = ""
+                        showDialog = false
+                    } else {
+                        nameError = !isNameValid
+                        priceError = !isPriceValid
+                    }
+                }) { Text("Save") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) { Text("Cancel") }
+            }
+        )
+    }
 
     Scaffold(
         floatingActionButton = {
-            FloatingActionButton(onClick = { }, containerColor = MaterialTheme.colorScheme.primary) {
+            FloatingActionButton(onClick = { showDialog = true }, containerColor = MaterialTheme.colorScheme.primary) {
                 Icon(Icons.Filled.Add, contentDescription = "Add Product", tint = Color.White)
             }
         }
@@ -277,16 +292,11 @@ fun VendorCatalogueScreen() {
         ) {
             items(productList) { product ->
                 Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
                     Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant),
-                            contentAlignment = Alignment.Center
-                        ) {
+                        Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
                             Icon(Icons.Filled.Fastfood, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         }
                         Spacer(modifier = Modifier.width(16.dp))
@@ -296,7 +306,13 @@ fun VendorCatalogueScreen() {
                             Text(product.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
                         }
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(product.price, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(product.price, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                            // The new Delete button
+                            IconButton(onClick = { productList.remove(product) }) {
+                                Icon(Icons.Filled.Delete, contentDescription = "Delete Product", tint = MaterialTheme.colorScheme.error)
+                            }
+                        }
                     }
                 }
             }
@@ -313,22 +329,14 @@ fun CustomerAppMainScreen() {
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(tabs[selectedTab], fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
-            )
+            CenterAlignedTopAppBar(title = { Text(tabs[selectedTab], fontWeight = FontWeight.Bold) }, colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer))
         },
         bottomBar = {
             NavigationBar {
                 tabs.forEachIndexed { index, title ->
                     NavigationBarItem(
-                        icon = {
-                            val icon = when(index) { 0 -> Icons.Filled.Search; 1 -> Icons.Filled.List; else -> Icons.Filled.Person }
-                            Icon(imageVector = icon, contentDescription = title)
-                        },
-                        label = { Text(title) },
-                        selected = selectedTab == index,
-                        onClick = { selectedTab = index }
+                        icon = { Icon(imageVector = when(index) { 0 -> Icons.Filled.Search; 1 -> Icons.Filled.List; else -> Icons.Filled.Person }, contentDescription = title) },
+                        label = { Text(title) }, selected = selectedTab == index, onClick = { selectedTab = index }
                     )
                 }
             }
