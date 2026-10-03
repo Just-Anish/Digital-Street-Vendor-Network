@@ -53,4 +53,6 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.7.7")
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation("androidx.compose.material:material-icons-extended")
+    implementation("com.google.maps.android:maps-compose:4.3.3")
+    implementation("com.google.android.gms:play-services-maps:18.2.0")
 }
