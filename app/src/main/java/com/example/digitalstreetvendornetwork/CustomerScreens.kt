@@ -1,12 +1,15 @@
 package com.example.digitalstreetvendornetwork
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -27,6 +30,43 @@ import com.google.maps.android.compose.rememberCameraPositionState
 // Data Model for Orders
 data class CustomerOrder(val id: String, val vendorName: String, val items: String, val total: String, val date: String, val status: String)
 data class MenuItem(val name: String, val price: String)
+
+data class VendorMenuItem(
+    val id: Int,
+    val name: String,
+    val description: String,
+    val price: Int,
+    val isVeg: Boolean = true
+)
+
+fun getVendorMenu(category: String): List<VendorMenuItem> {
+    return when (category) {
+        "Street Food" -> listOf(
+            VendorMenuItem(1, "Fresh Vada Pav", "Hot Mumbai style vada pav with spicy green chutney", 15),
+            VendorMenuItem(2, "Cutting Chai", "Strong ginger tea, brewed fresh with cardamom", 10),
+            VendorMenuItem(3, "Crispy Samosa", "Crisp spiced potato pastry with tamarind chutney", 20),
+            VendorMenuItem(4, "Special Misal Pav", "Spicy sprout curry topped with farsan and soft pav", 40)
+        )
+        "Vegetables" -> listOf(
+            VendorMenuItem(5, "Farm Fresh Tomatoes (1kg)", "Locally sourced ripe juicy tomatoes", 40),
+            VendorMenuItem(6, "Fresh Potatoes (1kg)", "Grade-A washed cooking potatoes", 30),
+            VendorMenuItem(7, "Red Onions (1kg)", "Crisp high-grade red onions", 35),
+            VendorMenuItem(8, "Organic Spinach (Palak)", "Fresh leafy green bunch", 25)
+        )
+        "Fruits" -> listOf(
+            VendorMenuItem(9, "Shimla Apples (500g)", "Crisp sweet Himalayan apples", 80),
+            VendorMenuItem(10, "Robusta Bananas (1 Dozen)", "Naturally ripened sweet bananas", 50),
+            VendorMenuItem(11, "Nagpur Oranges (1kg)", "Juicy sweet citrus oranges", 60),
+            VendorMenuItem(12, "Fresh Papaya (1 pc)", "Ripe golden sweet papaya", 45)
+        )
+        else -> listOf(
+            VendorMenuItem(13, "Mumbai Pani Puri (6 pcs)", "Crispy puris with tangy spiced water", 30),
+            VendorMenuItem(14, "Sukha Bhel Puri", "Crispy puffed rice with peanuts & chutneys", 35),
+            VendorMenuItem(15, "Special Sev Puri", "Puris loaded with potato, onions and fine sev", 40),
+            VendorMenuItem(16, "Dahi Puri", "Puris filled with sweet spiced curd & pomegranate", 50)
+        )
+    }
+}
 
 data class DiscoverableVendor(
     val id: Int,
@@ -61,6 +101,36 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
 
     val favouriteVendorIds = remember {
         mutableStateListOf<Int>()
+    }
+
+    // Hoisted customer orders for live sync
+    val customerOrders = remember {
+        mutableStateListOf(
+            CustomerOrder(
+                "ORD-4081",
+                "Raju's Fresh Vends",
+                "2x Fresh Vada Pav, 1x Cutting Chai",
+                "₹40",
+                "Today, 10:30 AM",
+                "Preparing"
+            ),
+            CustomerOrder(
+                "ORD-4075",
+                "Mumbai Chaat Corner",
+                "1x Pani Puri, 1x Bhel Puri",
+                "₹65",
+                "Yesterday",
+                "Completed"
+            ),
+            CustomerOrder(
+                "ORD-4062",
+                "Mumbai Fresh Fruits",
+                "1kg Shimla Apples",
+                "₹160",
+                "18 Oct 2026",
+                "Completed"
+            )
+        )
     }
 
     val tabs = listOf(
@@ -105,13 +175,14 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
         ) {
             when (selectedTab) {
                 0 -> CustomerDiscoverScreen(
-                    favouriteVendorIds = favouriteVendorIds
+                    favouriteVendorIds = favouriteVendorIds,
+                    onPlaceOrder = { newOrder -> customerOrders.add(0, newOrder) }
                 )
                 1 -> CustomerFavouritesScreen(
                     favouriteVendorIds = favouriteVendorIds,
                     onExploreClick = { selectedTab = 0 }
                 )
-                2 -> CustomerOrdersScreen()
+                2 -> CustomerOrdersScreen(orders = customerOrders)
                 3 -> CustomerProfileScreen(
                     name = customerName,
                     phone = customerPhone,
@@ -129,7 +200,8 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerDiscoverScreen(
-    favouriteVendorIds: MutableList<Int>
+    favouriteVendorIds: MutableList<Int>,
+    onPlaceOrder: (CustomerOrder) -> Unit = {}
 ) {
     val mumbaiLocation = LatLng(19.0760, 72.8777)
     val cameraPositionState = rememberCameraPositionState {
@@ -210,8 +282,11 @@ fun CustomerDiscoverScreen(
         mutableStateOf<DiscoverableVendor?>(null)
     }
 
-    // State for the Checkout Bottom Sheet
-    var selectedVendorName by remember { mutableStateOf<String?>(null) }
+    // State for Interactive Cart & Ordering Bottom Sheet
+    var activeOrderingVendor by remember { mutableStateOf<DiscoverableVendor?>(null) }
+    val cartQuantities = remember { mutableStateMapOf<String, Int>() }
+    var deliveryOption by remember { mutableStateOf("Pickup") }
+    var specialInstructions by remember { mutableStateOf("") }
     var showOrderSuccess by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -220,37 +295,17 @@ fun CustomerDiscoverScreen(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState
         ) {
-            Marker(
-                state = MarkerState(position = LatLng(19.1070, 72.8377)),
-                title = "Raju Vegetables",
-                snippet = "Open till 8PM",
-                onClick = {
-                    selectedVendorName = "Raju Vegetables"
-                    true // Consumes the click event
-                }
-            )
-            Marker(
-                state = MarkerState(position = LatLng(19.0860, 72.8877)),
-                title = "Vada Pav Stall",
-                snippet = "Hot Snacks",
-                onClick = {
-                    selectedVendorName = "Vada Pav Stall"
-                    true
-                }
-            )
-
-visibleVendors.forEach { vendor ->
-    Marker(
-        state = MarkerState(position = vendor.location),
-        title = vendor.name,
-        snippet = vendor.description,
-        onClick = {
-            selectedVendor = vendor
-            true
-        }
-    )
-}
-
+            visibleVendors.forEach { vendor ->
+                Marker(
+                    state = MarkerState(position = vendor.location),
+                    title = vendor.name,
+                    snippet = vendor.description,
+                    onClick = {
+                        selectedVendor = vendor
+                        true
+                    }
+                )
+            }
         }
 
         Column(
@@ -337,7 +392,7 @@ visibleVendors.forEach { vendor ->
             }
         }
 
-
+        // Vendor Details Preview Card (when tapping a pin)
         selectedVendor?.let { vendor ->
             Card(
                 modifier = Modifier
@@ -366,36 +421,27 @@ visibleVendors.forEach { vendor ->
                             )
                             Text(
                                 text = vendor.category,
-                                color = MaterialTheme.colorScheme.primary
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Medium
                             )
                         }
 
-
-IconButton(
-    onClick = {
-        if (vendor.id in favouriteVendorIds) {
-            favouriteVendorIds.remove(vendor.id)
-        } else {
-            favouriteVendorIds.add(vendor.id)
-        }
-    }
-) {
-    val isFavourite = vendor.id in favouriteVendorIds
-
-    Icon(
-        imageVector = if (isFavourite) {
-            Icons.Filled.Favorite
-        } else {
-            Icons.Filled.FavoriteBorder
-        },
-        contentDescription = if (isFavourite) {
-            "Remove from favourites"
-        } else {
-            "Add to favourites"
-        },
-        tint = if (isFavourite) Color.Red else Color.Gray
-    )
-}
+                        IconButton(
+                            onClick = {
+                                if (vendor.id in favouriteVendorIds) {
+                                    favouriteVendorIds.remove(vendor.id)
+                                } else {
+                                    favouriteVendorIds.add(vendor.id)
+                                }
+                            }
+                        ) {
+                            val isFavourite = vendor.id in favouriteVendorIds
+                            Icon(
+                                imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
+                                contentDescription = if (isFavourite) "Remove favourite" else "Add favourite",
+                                tint = if (isFavourite) Color.Red else Color.Gray
+                            )
+                        }
 
                         IconButton(onClick = { selectedVendor = null }) {
                             Icon(
@@ -405,71 +451,379 @@ IconButton(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(text = vendor.description)
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Available Products",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = vendor.description,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.DarkGray
                     )
 
-                    vendor.products.forEach { product ->
+                    Spacer(modifier = Modifier.height(14.dp))
+
+                    Button(
+                        onClick = {
+                            activeOrderingVendor = vendor
+                            cartQuantities.clear()
+                            deliveryOption = "Pickup"
+                            specialInstructions = ""
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.ShoppingBag,
+                            contentDescription = null,
+                            tint = Color.White
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "• $product",
-                            modifier = Modifier.padding(vertical = 4.dp)
+                            text = "View Menu & Order",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
                         )
                     }
                 }
             }
         }
 
-        // Bottom Sheet for Checkout Flow
-        if (selectedVendorName != null) {
+        // Interactive Cart & Menu Modal Bottom Sheet
+        if (activeOrderingVendor != null) {
+            val vendor = activeOrderingVendor!!
+            val menu = remember(vendor) { getVendorMenu(vendor.category) }
+            val totalItems = cartQuantities.values.sum()
+            val subtotal = cartQuantities.entries.sumOf { (name, count) ->
+                val item = menu.firstOrNull { it.name == name }
+                (item?.price ?: 0) * count
+            }
+            val deliveryFee = if (deliveryOption == "Nearby") 10 else 0
+            val totalPayable = subtotal + deliveryFee
+
             ModalBottomSheet(
-                onDismissRequest = { selectedVendorName = null },
-                containerColor = MaterialTheme.colorScheme.surface
+                onDismissRequest = {
+                    activeOrderingVendor = null
+                    cartQuantities.clear()
+                },
+                containerColor = Color.White,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
             ) {
-                Column(modifier = Modifier.padding(24.dp).fillMaxWidth()) {
-                    Text(selectedVendorName ?: "", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                    Text("Verified Local Vendor", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.secondary)
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    // Header
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = vendor.name,
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(top = 2.dp)
+                            ) {
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = MaterialTheme.colorScheme.surfaceVariant
+                                ) {
+                                    Text(
+                                        text = vendor.category,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = "• ${vendor.description}",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
 
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text("Menu / Catalogue", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    val dummyMenu = if (selectedVendorName == "Raju Vegetables") {
-                        listOf(MenuItem("1kg Farm Tomatoes", "₹40"), MenuItem("500g Fresh Onions", "₹30"))
-                    } else {
-                        listOf(MenuItem("Hot Vada Pav", "₹15"), MenuItem("Cutting Chai", "₹10"))
-                    }
-
-                    dummyMenu.forEach { item ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
+                        IconButton(
+                            onClick = {
+                                activeOrderingVendor = null
+                                cartQuantities.clear()
+                            }
                         ) {
-                            Text(item.name, style = MaterialTheme.typography.bodyLarge)
-                            Text(item.price, style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.Gray)
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
+                    HorizontalDivider(color = Color(0xFFF0F0F0))
+                    Spacer(modifier = Modifier.height(12.dp))
 
-                    Button(
-                        onClick = {
-                            selectedVendorName = null
-                            showOrderSuccess = true
-                        },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Place Order via UPI", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                    Text(
+                        text = "Select Items",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Menu list with +/- counter
+                    menu.forEach { item ->
+                        val quantity = cartQuantities[item.name] ?: 0
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 5.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (quantity > 0)
+                                    Color(0xFFFFF8E1).copy(alpha = 0.5f)
+                                else
+                                    Color(0xFFFAFAFA)
+                            ),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(14.dp)
+                                                .border(1.2.dp, Color(0xFF2E7D32), RoundedCornerShape(3.dp)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(6.dp)
+                                                    .clip(CircleShape)
+                                                    .background(Color(0xFF2E7D32))
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = item.name,
+                                            style = MaterialTheme.typography.titleSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(3.dp))
+                                    Text(
+                                        text = item.description,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color.Gray,
+                                        maxLines = 2
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Text(
+                                        text = "₹${item.price}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.secondary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(12.dp))
+
+                                // Interactive counter
+                                if (quantity == 0) {
+                                    OutlinedButton(
+                                        onClick = { cartQuantities[item.name] = 1 },
+                                        shape = RoundedCornerShape(12.dp),
+                                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                        colors = ButtonDefaults.outlinedButtonColors(
+                                            contentColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        Text("ADD +", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                                    }
+                                } else {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(20.dp))
+                                            .background(MaterialTheme.colorScheme.primary)
+                                            .padding(horizontal = 4.dp, vertical = 2.dp)
+                                    ) {
+                                        IconButton(
+                                            onClick = {
+                                                if (quantity <= 1) {
+                                                    cartQuantities.remove(item.name)
+                                                } else {
+                                                    cartQuantities[item.name] = quantity - 1
+                                                }
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Remove,
+                                                contentDescription = "Decrease",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+
+                                        Text(
+                                            text = "$quantity",
+                                            fontWeight = FontWeight.Bold,
+                                            color = Color.White,
+                                            modifier = Modifier.padding(horizontal = 8.dp),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+
+                                        IconButton(
+                                            onClick = {
+                                                cartQuantities[item.name] = quantity + 1
+                                            },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Add,
+                                                contentDescription = "Increase",
+                                                tint = Color.White,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Live Cart & Checkout Footer
+                    if (totalItems > 0) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        HorizontalDivider(color = Color(0xFFF0F0F0))
+                        Spacer(modifier = Modifier.height(14.dp))
+
+                        Text(
+                            text = "Delivery & Preferences",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            FilterChip(
+                                selected = deliveryOption == "Pickup",
+                                onClick = { deliveryOption = "Pickup" },
+                                label = { Text("Stall Pickup (Free)") },
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                            FilterChip(
+                                selected = deliveryOption == "Nearby",
+                                onClick = { deliveryOption = "Nearby" },
+                                label = { Text("Nearby Delivery (+₹10)") },
+                                shape = RoundedCornerShape(12.dp)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = specialInstructions,
+                            onValueChange = { specialInstructions = it },
+                            placeholder = { Text("Special instructions (e.g. extra spicy)") },
+                            shape = RoundedCornerShape(12.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Bill Summary Box
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = Color(0xFFF9F9FB),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Items Subtotal ($totalItems items)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                    Text("₹$subtotal", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                }
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Text("Delivery Fee", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                    Text(if (deliveryFee == 0) "FREE" else "₹10", style = MaterialTheme.typography.bodyMedium, color = if (deliveryFee == 0) Color(0xFF2E7D32) else Color.DarkGray)
+                                }
+                                Spacer(modifier = Modifier.height(8.dp))
+                                HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 0.8.dp)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text("Total Payable", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text("₹$totalPayable", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        Button(
+                            onClick = {
+                                val itemsSummary = cartQuantities.entries.joinToString(", ") { "${it.value}x ${it.key}" }
+                                val newOrder = CustomerOrder(
+                                    id = "ORD-${(1000..9999).random()}",
+                                    vendorName = vendor.name,
+                                    items = itemsSummary,
+                                    total = "₹$totalPayable",
+                                    date = "Today, Just now",
+                                    status = "Pending"
+                                )
+                                onPlaceOrder(newOrder)
+                                activeOrderingVendor = null
+                                cartQuantities.clear()
+                                showOrderSuccess = true
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(52.dp),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Filled.ShoppingBag, contentDescription = null, tint = Color.White)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Place Order • ₹$totalPayable",
+                                fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(24.dp))
+                    } else {
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
                 }
             }
         }
@@ -479,11 +833,11 @@ IconButton(
             AlertDialog(
                 onDismissRequest = { showOrderSuccess = false },
                 icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(48.dp)) },
-                title = { Text("Order Placed!") },
+                title = { Text("Order Placed Successfully!", fontWeight = FontWeight.Bold) },
                 text = { Text("The vendor has received your order request. You can track its status in the 'My Orders' tab.") },
                 confirmButton = {
                     Button(onClick = { showOrderSuccess = false }) {
-                        Text("Awesome")
+                        Text("Track in My Orders")
                     }
                 }
             )
@@ -740,8 +1094,8 @@ Column {
 }
 
 @Composable
-fun CustomerOrdersScreen() {
-    val orders = remember {
+fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
+    val defaultOrders = remember {
         listOf(
             CustomerOrder(
                 "ORD001",
@@ -770,6 +1124,8 @@ fun CustomerOrdersScreen() {
         )
     }
 
+    val displayOrders = if (orders.isNotEmpty()) orders else defaultOrders
+
     val statusColors = mapOf(
         "Completed" to Color(0xFF2E7D32),
         "Preparing" to Color(0xFFE65100),
@@ -787,11 +1143,11 @@ var selectedOrderFilter by remember {
     mutableStateOf("All")
 }
 
-val filteredOrders = remember(orders, selectedOrderFilter) {
+val filteredOrders = remember(displayOrders, selectedOrderFilter) {
     if (selectedOrderFilter == "All") {
-        orders
+        displayOrders
     } else {
-        orders.filter { order ->
+        displayOrders.filter { order ->
             order.status == selectedOrderFilter
         }
     }
