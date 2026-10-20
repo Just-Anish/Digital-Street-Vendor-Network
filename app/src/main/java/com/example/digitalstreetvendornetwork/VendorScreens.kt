@@ -68,9 +68,16 @@ data class VendorOrder(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VendorAppMainScreen(onLogout: () -> Unit) {
+fun VendorAppMainScreen(
+    onLogout: () -> Unit,
+    onLanguageChange: (AppLanguage) -> Unit = {}
+) {
+    val t = LocalStrings.current
+    val currentLang = LocalAppLanguage.current
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Catalogue", "Location", "Orders", "Profile")
+    val tabs = listOf(t.catalogue, t.liveLocation, t.orders, t.profile)
 
     // Hoisted State for Catalogue
     val productList = remember { mutableStateListOf(
@@ -162,7 +169,14 @@ fun VendorAppMainScreen(onLogout: () -> Unit) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(tabs[selectedTab], fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                actions = {
+                    LanguageSwitchPill(
+                        currentLanguage = currentLang,
+                        onClick = { showLanguageDialog = true },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
             )
         },
         bottomBar = {
@@ -260,10 +274,19 @@ fun VendorAppMainScreen(onLogout: () -> Unit) {
                     onUpiIdChange = { upiId = it },
                     todayEarnings = todayEarnings,
                     completedOrdersCount = completedOrdersCount,
+                    onLanguageClick = { showLanguageDialog = true },
                     onLogout = onLogout
                 )
             }
         }
+    }
+
+    if (showLanguageDialog) {
+        LanguageSelectionDialog(
+            currentLanguage = currentLang,
+            onLanguageSelected = onLanguageChange,
+            onDismissRequest = { showLanguageDialog = false }
+        )
     }
 }
 
@@ -743,8 +766,11 @@ fun VendorProfileScreen(
     onUpiIdChange: (String) -> Unit,
     todayEarnings: Int = 1450,
     completedOrdersCount: Int = 42,
+    onLanguageClick: () -> Unit = {},
     onLogout: () -> Unit
 ) {
+    val t = LocalStrings.current
+    val currentLang = LocalAppLanguage.current
     var currentSubScreen by remember { mutableStateOf("MAIN") }
 
     when (currentSubScreen) {
@@ -771,18 +797,18 @@ fun VendorProfileScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (isStallOpen) "Open • $operatingHours" else "Currently Closed",
+                        text = if (isStallOpen) "${t.stallOpen} • $operatingHours" else t.stallClosed,
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isStallOpen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Medium
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(28.dp))
 
                 Card(
                     onClick = { currentSubScreen = "EARNINGS" },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     shape = RoundedCornerShape(12.dp)
@@ -791,16 +817,45 @@ fun VendorProfileScreen(
                         Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Earnings & Reviews", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text("View daily revenue & customer ratings", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text("Earnings & Ledger", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text("View daily revenue, ledger & reviews", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         }
                         Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
                     }
                 }
 
                 Card(
+                    onClick = onLanguageClick,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Translate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(t.language, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text("${currentLang.displayName} (${currentLang.nativeName})", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = t.changeLanguage,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                Card(
                     onClick = { currentSubScreen = "SETTINGS" },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     shape = RoundedCornerShape(12.dp)
@@ -826,7 +881,7 @@ fun VendorProfileScreen(
                 ) {
                     Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Close Shop (Logout)", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                    Text("${t.closeStall} (${t.logout})", fontSize = MaterialTheme.typography.titleMedium.fontSize)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -966,8 +1021,14 @@ fun VendorOrdersScreen(
     onDeclineOrder: (VendorOrder) -> Unit,
     onSimulateOrder: () -> Unit
 ) {
+    val t = LocalStrings.current
     var selectedFilter by remember { mutableStateOf("Pending") }
-    val filters = listOf("Pending", "Preparing", "Completed", "All")
+    val filterItems = listOf(
+        "Pending" to t.pending,
+        "Preparing" to t.preparing,
+        "Completed" to t.completed,
+        "All" to t.all
+    )
 
     val pendingCount = ordersList.count { it.status == VendorOrderStatus.PENDING }
     val preparingCount = ordersList.count { it.status == VendorOrderStatus.PREPARING }
@@ -998,12 +1059,12 @@ fun VendorOrdersScreen(
         ) {
             Column {
                 Text(
-                    text = "Live Order Queue",
+                    text = t.incomingOrders,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "$pendingCount incoming • $preparingCount in kitchen",
+                    text = "$pendingCount ${t.pending} • $preparingCount ${t.preparing}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -1023,7 +1084,7 @@ fun VendorOrdersScreen(
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Test Incoming", style = MaterialTheme.typography.labelMedium)
+                Text(t.simulateOrder, style = MaterialTheme.typography.labelMedium)
             }
         }
 
@@ -1034,19 +1095,19 @@ fun VendorOrdersScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(filters) { filter ->
-                val count = when (filter) {
+            items(filterItems) { (filterKey, filterLabel) ->
+                val count = when (filterKey) {
                     "Pending" -> pendingCount
                     "Preparing" -> preparingCount
                     "Completed" -> completedCount
                     else -> ordersList.size
                 }
-                val label = "$filter ($count)"
-                val isSelected = selectedFilter == filter
+                val label = "$filterLabel ($count)"
+                val isSelected = selectedFilter == filterKey
 
                 FilterChip(
                     selected = isSelected,
-                    onClick = { selectedFilter = filter },
+                    onClick = { selectedFilter = filterKey },
                     label = {
                         Text(
                             text = label,
@@ -1137,6 +1198,7 @@ fun VendorOrderCard(
     onComplete: () -> Unit,
     onDecline: () -> Unit
 ) {
+    val t = LocalStrings.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -1164,12 +1226,11 @@ fun VendorOrderCard(
                     )
                 }
 
-                // Status chip
                 val (statusBg, statusColor, statusText) = when (order.status) {
-                    VendorOrderStatus.PENDING -> Triple(Color(0xFFFFF3E0), Color(0xFFE65100), "Incoming")
-                    VendorOrderStatus.PREPARING -> Triple(Color(0xFFE3F2FD), Color(0xFF1976D2), "Preparing")
-                    VendorOrderStatus.COMPLETED -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "Completed")
-                    VendorOrderStatus.DECLINED -> Triple(Color(0xFFFFEBEE), Color(0xFFD32F2F), "Declined")
+                    VendorOrderStatus.PENDING -> Triple(Color(0xFFFFF3E0), Color(0xFFE65100), t.pending)
+                    VendorOrderStatus.PREPARING -> Triple(Color(0xFFE3F2FD), Color(0xFF1976D2), t.preparing)
+                    VendorOrderStatus.COMPLETED -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), t.completed)
+                    VendorOrderStatus.DECLINED -> Triple(Color(0xFFFFEBEE), Color(0xFFD32F2F), t.cancel)
                 }
 
                 Surface(
@@ -1337,7 +1398,7 @@ fun VendorOrderCard(
                         ) {
                             Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Decline")
+                            Text(t.cancel)
                         }
 
                         Button(
@@ -1352,7 +1413,7 @@ fun VendorOrderCard(
                         ) {
                             Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Accept")
+                            Text(t.acceptOrder)
                         }
                     }
                 }
@@ -1371,7 +1432,7 @@ fun VendorOrderCard(
                     ) {
                         Icon(Icons.Filled.DoneAll, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Mark Ready & Complete")
+                        Text(t.completeOrder)
                     }
                 }
 
