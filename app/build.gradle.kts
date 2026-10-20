@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    id("com.google.android.libraries.mapsplatform.secrets-gradle-plugin")
 }
 
 android {
@@ -32,7 +33,15 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
+}
+
+secrets {
+    // Reads keys from local.properties (not committed to VCS)
+    propertiesFileName = "local.properties"
+    // Provides a safe fallback so the build succeeds without a real key
+    defaultPropertiesFileName = "secrets.defaults.properties"
 }
 
 dependencies {

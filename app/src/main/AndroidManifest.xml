@@ -16,6 +16,7 @@
         <!-- The Google Maps SDK specifically searches for this exact meta-data block -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
+            android:value="${MAPS_API_KEY}" />
             android:value="AIzaSyASL_IzSv0pCZFp4VTX-utBJVeyt87yHjc" />
 
         <activity
