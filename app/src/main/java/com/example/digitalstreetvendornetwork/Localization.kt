@@ -108,7 +108,18 @@ data class AppTranslation(
     val language: String,
     val upiId: String,
     val operatingHours: String,
-    val editProfile: String
+    val editProfile: String,
+
+    // Daily Ledger / Khata Book
+    val khataBook: String,
+    val netProfit: String,
+    val totalRevenue: String,
+    val totalExpenses: String,
+    val addExpense: String,
+    val expenseTitle: String,
+    val expenseAmount: String,
+    val expenseCategory: String,
+    val profitMargin: String
 )
 
 val EnglishTranslations = AppTranslation(
@@ -182,7 +193,17 @@ val EnglishTranslations = AppTranslation(
     language = "Language",
     upiId = "UPI ID",
     operatingHours = "Operating Hours",
-    editProfile = "Edit Profile"
+    editProfile = "Edit Profile",
+
+    khataBook = "Daily Ledger (Khata Book)",
+    netProfit = "Net Profit",
+    totalRevenue = "Total Revenue",
+    totalExpenses = "Total Expenses",
+    addExpense = "Add Expense",
+    expenseTitle = "Expense Item",
+    expenseAmount = "Amount (₹)",
+    expenseCategory = "Category",
+    profitMargin = "Profit Margin"
 )
 
 val HindiTranslations = AppTranslation(
@@ -256,7 +277,17 @@ val HindiTranslations = AppTranslation(
     language = "भाषा",
     upiId = "यूपीआई आईडी",
     operatingHours = "दुकान का समय",
-    editProfile = "प्रोफ़ाइल बदलें"
+    editProfile = "प्रोफ़ाइल बदलें",
+
+    khataBook = "दैनिक खाता बही (खाता)",
+    netProfit = "शुद्ध मुनाफ़ा (नेट प्रॉफिट)",
+    totalRevenue = "कुल बिक्री / आमदनी",
+    totalExpenses = "कुल ख़र्च",
+    addExpense = "ख़र्च जोड़ें",
+    expenseTitle = "ख़र्च का सामान",
+    expenseAmount = "रकम (₹)",
+    expenseCategory = "श्रेणी",
+    profitMargin = "मुनाफ़ा दर"
 )
 
 val MarathiTranslations = AppTranslation(
@@ -330,7 +361,17 @@ val MarathiTranslations = AppTranslation(
     language = "भाषा",
     upiId = "युपीआय आयडी",
     operatingHours = "कामाची वेळ",
-    editProfile = "प्रोफाइल बदला"
+    editProfile = "प्रोफाइल बदला",
+
+    khataBook = "दैनंदिन खातावही",
+    netProfit = "निव्वळ नफा (नेट प्रॉफिट)",
+    totalRevenue = "एकूण महसूल",
+    totalExpenses = "एकूण खर्च",
+    addExpense = "खर्च जोडा",
+    expenseTitle = "खर्चाची वस्तू",
+    expenseAmount = "रक्कम (₹)",
+    expenseCategory = "वर्ग",
+    profitMargin = "नफा प्रमाण"
 )
 
 fun getAppTranslation(language: AppLanguage): AppTranslation {
