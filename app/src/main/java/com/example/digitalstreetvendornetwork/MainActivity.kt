@@ -27,7 +27,11 @@ class MainActivity : ComponentActivity() {
             MaterialTheme(
                 colorScheme = lightColorScheme(
                     primary = Color(0xFFE65100),
+                    onPrimary = Color.White,
+                    primaryContainer = Color(0xFFFFECE0),
+                    onPrimaryContainer = Color(0xFF4E1600),
                     secondary = Color(0xFF2E7D32),
+                    onSecondary = Color.White,
                     surfaceVariant = Color(0xFFFFF3E0),
                     error = Color(0xFFD32F2F)
                 )

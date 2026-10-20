@@ -25,7 +25,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 
 // Data Model for Orders
-data class CustomerOrder(val id: Int, val vendorName: String, val items: String, val total: String, val date: String, val status: String)
+data class CustomerOrder(val id: String, val vendorName: String, val items: String, val total: String, val date: String, val status: String)
 data class MenuItem(val name: String, val price: String)
 
 data class DiscoverableVendor(
@@ -104,27 +104,19 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
                 .padding(innerPadding)
         ) {
             when (selectedTab) {
-                0 -> CustomerDiscoverScreen()
-                1 -> CustomerOrderHistoryScreen(onBack = { selectedTab = 0 })
-                2 -> CustomerProfileScreen(
-                    name = customerName,
-                    phone = customerPhone,
-                    onNameChange = { customerName = it },
-                    onPhoneChange = { customerPhone = it },
                 0 -> CustomerDiscoverScreen(
                     favouriteVendorIds = favouriteVendorIds
                 )
-
                 1 -> CustomerFavouritesScreen(
                     favouriteVendorIds = favouriteVendorIds,
                     onExploreClick = { selectedTab = 0 }
                 )
-
-
                 2 -> CustomerOrdersScreen()
-
-
                 3 -> CustomerProfileScreen(
+                    name = customerName,
+                    phone = customerPhone,
+                    onNameChange = { customerName = it },
+                    onPhoneChange = { customerPhone = it },
                     onLogout = onLogout
                 )
             }
@@ -140,8 +132,6 @@ fun CustomerDiscoverScreen(
     favouriteVendorIds: MutableList<Int>
 ) {
     val mumbaiLocation = LatLng(19.0760, 72.8777)
-    val cameraPositionState = rememberCameraPositionState { position = CameraPosition.fromLatLngZoom(mumbaiLocation, 12f) }
-
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(mumbaiLocation, 12f)
     }
@@ -575,8 +565,8 @@ fun ProfileOptionCard(icon: androidx.compose.ui.graphics.vector.ImageVector, tit
 @Composable
 fun CustomerOrderHistoryScreen(onBack: () -> Unit) {
     val orders = listOf(
-        CustomerOrder(1, "Raju's Fresh Vends", "2x Vada Pav, 1x Chai", "₹40", "Today, 10:30 AM", "Delivered"),
-        CustomerOrder(2, "Gopi Vegetables", "1kg Tomatoes, 500g Onions", "₹120", "Yesterday", "Picked Up")
+        CustomerOrder("ORD001", "Raju's Fresh Vends", "2x Vada Pav, 1x Chai", "₹40", "Today, 10:30 AM", "Delivered"),
+        CustomerOrder("ORD002", "Gopi Vegetables", "1kg Tomatoes, 500g Onions", "₹120", "Yesterday", "Picked Up")
     )
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -659,6 +649,7 @@ fun CustomerSettingsScreen(
         }
     }
 }
+@Composable
 fun CustomerFavouritesScreen(
     favouriteVendorIds: List<Int>,
     onExploreClick: () -> Unit
@@ -748,15 +739,6 @@ Column {
     }
 }
 
-data class CustomerOrder(
-    val id: String,
-    val vendorName: String,
-    val items: String,
-    val total: Int,
-    val date: String,
-    val status: String
-)
-
 @Composable
 fun CustomerOrdersScreen() {
     val orders = remember {
@@ -765,7 +747,7 @@ fun CustomerOrdersScreen() {
                 "ORD001",
                 "Raju Vegetables",
                 "Tomatoes, Potatoes",
-                120,
+                "₹120",
                 "18 Oct 2026",
                 "Completed"
             ),
@@ -773,7 +755,7 @@ fun CustomerOrdersScreen() {
                 "ORD002",
                 "Mumbai Chaat Corner",
                 "Pani Puri, Bhel Puri",
-                90,
+                "₹90",
                 "19 Oct 2026",
                 "Preparing"
             ),
@@ -781,7 +763,7 @@ fun CustomerOrdersScreen() {
                 "ORD003",
                 "Mumbai Fresh Fruits",
                 "Apples, Bananas",
-                180,
+                "₹180",
                 "20 Oct 2026",
                 "Pending"
             )
@@ -963,7 +945,7 @@ if (filteredOrders.isEmpty()) {
                             )
 
                             Text(
-                                text = "₹${order.total}",
+                                text = order.total,
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary
