@@ -33,6 +33,17 @@ class VendorViewModel : ViewModel() {
     private val _upiId = MutableStateFlow("")
     val upiId: StateFlow<String> = _upiId.asStateFlow()
 
+    // ── Location broadcast ────────────────────────────────────────────────────
+    private val _isBroadcastingLocation = MutableStateFlow(false)
+    val isBroadcastingLocation: StateFlow<Boolean> = _isBroadcastingLocation.asStateFlow()
+
+    /** Last-known stall coordinates (lat, lng). Default: central Mumbai. */
+    private val _stallLat = MutableStateFlow(19.0760)
+    val stallLat: StateFlow<Double> = _stallLat.asStateFlow()
+
+    private val _stallLng = MutableStateFlow(72.8777)
+    val stallLng: StateFlow<Double> = _stallLng.asStateFlow()
+
     private val _productList = MutableStateFlow<List<Product>>(emptyList())
     val productList: StateFlow<List<Product>> = _productList.asStateFlow()
 
@@ -61,6 +72,9 @@ class VendorViewModel : ViewModel() {
                     _isStallOpen.value = snapshot.getBoolean("isStallOpen") ?: false
                     _operatingHours.value = snapshot.getString("operatingHours") ?: "9 AM - 9 PM"
                     _upiId.value = snapshot.getString("upiId") ?: ""
+                    _isBroadcastingLocation.value = snapshot.getBoolean("isBroadcastingLocation") ?: false
+                    _stallLat.value = snapshot.getDouble("lat") ?: 19.0760
+                    _stallLng.value = snapshot.getDouble("lng") ?: 72.8777
                 }
             }
     }
@@ -122,5 +136,36 @@ class VendorViewModel : ViewModel() {
 
     fun clearSaveResult() {
         _saveResult.value = SaveResult.Idle
+    }
+
+    // ── Location broadcast writes ─────────────────────────────────────────────
+
+    /**
+     * Persists the vendor's stall coordinates to Firestore.
+     * Called whenever the user taps or drags the map marker.
+     *
+     * Firestore path: /vendors/{vendorId}
+     * Fields written (merge): lat: Double, lng: Double
+     */
+    fun updateLocation(lat: Double, lng: Double) {
+        if (vendorId == null) return
+        // Optimistic local update so the marker moves instantly
+        _stallLat.value = lat
+        _stallLng.value = lng
+        db.collection("vendors").document(vendorId)
+            .set(mapOf("lat" to lat, "lng" to lng), SetOptions.merge())
+            .addOnFailureListener { e -> Log.e("VendorViewModel", "updateLocation failed", e) }
+    }
+
+    /**
+     * Toggles the isBroadcastingLocation flag in Firestore.
+     * When true, the vendor's marker becomes visible to customers on the discovery map.
+     */
+    fun toggleLocationBroadcast(isBroadcasting: Boolean) {
+        if (vendorId == null) return
+        _isBroadcastingLocation.value = isBroadcasting   // optimistic
+        db.collection("vendors").document(vendorId)
+            .set(mapOf("isBroadcastingLocation" to isBroadcasting), SetOptions.merge())
+            .addOnFailureListener { e -> Log.e("VendorViewModel", "toggleLocationBroadcast failed", e) }
     }
 }
