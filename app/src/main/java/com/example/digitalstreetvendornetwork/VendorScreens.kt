@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.viewmodel.Order
 import com.example.digitalstreetvendornetwork.viewmodel.VendorViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -55,6 +56,7 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
     val isBroadcastingLocation by viewModel.isBroadcastingLocation.collectAsState()
     val stallLat by viewModel.stallLat.collectAsState()
     val stallLng by viewModel.stallLng.collectAsState()
+    val activeOrders by viewModel.activeOrders.collectAsState()
 
     Scaffold(
         topBar = {
@@ -98,7 +100,10 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
                     onToggleBroadcast = { viewModel.toggleLocationBroadcast(it) },
                     onLocationChange = { lat, lng -> viewModel.updateLocation(lat, lng) }
                 )
-                2 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No Active Orders") }
+                2 -> VendorOrdersScreen(
+                    orders = activeOrders,
+                    onUpdateStatus = { orderId, newStatus -> viewModel.updateOrderStatus(orderId, newStatus) }
+                )
                 3 -> VendorProfileScreen(
                     stallName = stallName,
                     onStallNameChange = { viewModel.updateBusinessSettings(it, operatingHours, upiId) },
@@ -376,6 +381,194 @@ fun VendorBusinessSettingsScreen(
                 Button(onClick = { onStallNameChange(tempName); onOperatingHoursChange(tempHours); onUpiIdChange(tempUpi); onBack() }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
                     Text("Save Changes")
                 }
+            }
+        }
+    }
+}
+
+// ── Batch 4B: Real-Time Vendor Orders Screen ──────────────────────────────────
+
+/**
+ * Displays live orders received from Firestore (/orders where vendorId == uid).
+ * Each card shows order ID, customer ID, item list, total, timestamp, and a
+ * status badge. Action buttons drive the order lifecycle:
+ *   PENDING   -> [Accept] -> PREPARING
+ *   PREPARING -> [Complete] -> COMPLETED
+ *   PENDING   -> [Decline] -> DECLINED
+ *
+ * Status writes are delegated to [VendorViewModel.updateOrderStatus] which
+ * performs a Firestore merge-write on the /orders/{orderId} document.
+ */
+@Composable
+fun VendorOrdersScreen(
+    orders: List<Order>,
+    onUpdateStatus: (orderId: String, newStatus: String) -> Unit
+) {
+    if (orders.isEmpty()) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                    Icons.Filled.ShoppingCart,
+                    contentDescription = null,
+                    modifier = Modifier.size(64.dp),
+                    tint = Color.LightGray
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    "No orders yet",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.Gray
+                )
+                Text(
+                    "New customer orders will appear here in real-time.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.LightGray
+                )
+            }
+        }
+        return
+    }
+
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
+    ) {
+        items(orders, key = { it.orderId }) { order ->
+            VendorOrderCard(order = order, onUpdateStatus = onUpdateStatus)
+        }
+    }
+}
+
+/**
+ * A single order card rendered inside [VendorOrdersScreen].
+ * Renders order details and context-appropriate action buttons based on
+ * the current [Order.status].
+ */
+@Composable
+fun VendorOrderCard(
+    order: Order,
+    onUpdateStatus: (orderId: String, newStatus: String) -> Unit
+) {
+    // Derive status badge colours
+    val (statusColor, statusLabel) = when (order.status.uppercase()) {
+        "PENDING"   -> Pair(Color(0xFFFFA000), "Pending")
+        "PREPARING" -> Pair(Color(0xFF1976D2), "Preparing")
+        "COMPLETED" -> Pair(Color(0xFF2E7D32), "Completed")
+        "DECLINED"  -> Pair(Color(0xFFD32F2F), "Declined")
+        else        -> Pair(Color.Gray, order.status)
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+
+            // ── Header row: order ID + status badge ──────────────────────────
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Order #${order.orderId.takeLast(6).uppercase()}",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = statusColor.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = statusLabel,
+                        color = statusColor,
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // ── Customer info ────────────────────────────────────────────────
+            Text(
+                text = "Customer ID: ${order.customerId.take(12)}…",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // ── Items list ───────────────────────────────────────────────────
+            Text(
+                text = order.items.joinToString(" · "),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium
+            )
+
+            Spacer(modifier = Modifier.height(6.dp))
+
+            // ── Total ────────────────────────────────────────────────────────
+            Text(
+                text = order.totalAmount,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.secondary
+            )
+
+            // ── Action buttons (context-sensitive) ───────────────────────────
+            when (order.status.uppercase()) {
+                "PENDING" -> {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Button(
+                            onClick = { onUpdateStatus(order.orderId, "PREPARING") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Accept", fontWeight = FontWeight.Bold)
+                        }
+                        OutlinedButton(
+                            onClick = { onUpdateStatus(order.orderId, "DECLINED") },
+                            modifier = Modifier.weight(1f),
+                            shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Decline", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+                "PREPARING" -> {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { onUpdateStatus(order.orderId, "COMPLETED") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF2E7D32)
+                        )
+                    ) {
+                        Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Mark Complete", fontWeight = FontWeight.Bold)
+                    }
+                }
+                // COMPLETED / DECLINED: no action buttons — read-only terminal states
             }
         }
     }
