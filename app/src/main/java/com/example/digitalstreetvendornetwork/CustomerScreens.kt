@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -111,7 +112,12 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
         )
     }
 
-    val tabs = listOf("Discover", "Favourites", "My Orders", "Profile")
+    val tabs = listOf(
+        stringResource(R.string.tab_discover),
+        stringResource(R.string.tab_favourites),
+        stringResource(R.string.tab_my_orders),
+        stringResource(R.string.tab_profile)
+    )
     var customerName by remember { mutableStateOf("Local Shopper") }
     var customerPhone by remember { mutableStateOf("+91 9876543210") }
 
@@ -239,17 +245,24 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
         // Top Search Bar Overlay
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp).align(Alignment.TopCenter)) {
             OutlinedTextField(
-                value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text("Search for vendors or items...") },
-                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = "Search") },
-                trailingIcon = { if (searchQuery.isNotEmpty()) { IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Filled.Close, contentDescription = "Clear search") } } },
+                value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text(stringResource(R.string.search_placeholder)) },
+                leadingIcon = { Icon(Icons.Filled.Search, contentDescription = stringResource(R.string.search_placeholder)) },
+                trailingIcon = { if (searchQuery.isNotEmpty()) { IconButton(onClick = { searchQuery = "" }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close)) } } },
                 modifier = Modifier.fillMaxWidth().background(Color.White, RoundedCornerShape(32.dp)),
                 shape = RoundedCornerShape(32.dp), singleLine = true, colors = OutlinedTextFieldDefaults.colors(unfocusedBorderColor = Color.Transparent, focusedBorderColor = MaterialTheme.colorScheme.primary)
             )
             Spacer(modifier = Modifier.height(12.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(filters) { filter ->
+                    val filterLabel = when (filter) {
+                        "All" -> stringResource(R.string.filter_all)
+                        "Vegetables" -> stringResource(R.string.category_vegetables)
+                        "Fruits" -> stringResource(R.string.category_fruits)
+                        "Street Food" -> stringResource(R.string.category_street_food)
+                        else -> filter
+                    }
                     FilterChip(
-                        selected = selectedFilter == filter, onClick = { selectedFilter = filter }, label = { Text(filter) },
+                        selected = selectedFilter == filter, onClick = { selectedFilter = filter }, label = { Text(filterLabel) },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = MaterialTheme.colorScheme.primary, selectedLabelColor = Color.White)
                     )
                 }
@@ -257,7 +270,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
             if (visibleVendors.isEmpty()) {
                 Spacer(modifier = Modifier.height(12.dp))
                 Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                    Text(text = "No vendors found. Try another search.", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+                    Text(text = stringResource(R.string.no_vendors_found) + " " + stringResource(R.string.no_vendors_sub), modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }
@@ -279,7 +292,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                             val isFavourite = vendor.id in favouriteVendorIds
                             Icon(imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, contentDescription = null, tint = if (isFavourite) Color.Red else Color.Gray)
                         }
-                        IconButton(onClick = { selectedVendor = null }) { Icon(Icons.Filled.Close, contentDescription = "Close vendor details") }
+                        IconButton(onClick = { selectedVendor = null }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close)) }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(text = vendor.description, style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
@@ -297,7 +310,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                     ) {
                         Icon(imageVector = Icons.Filled.ShoppingBag, contentDescription = null, tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "View Menu", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(text = stringResource(R.string.view_menu_order), fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
@@ -361,18 +374,18 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                     Text(text = vendor.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                                     Text(text = vendor.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                 }
-                                IconButton(onClick = { activeOrderingVendor = null; cartQuantities.clear() }) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.Gray) }
+                                IconButton(onClick = { activeOrderingVendor = null; cartQuantities.clear() }) { Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.cd_close), tint = Color.Gray) }
                             }
                             Spacer(modifier = Modifier.height(14.dp))
                             HorizontalDivider(color = MenuDivider)
                             Spacer(modifier = Modifier.height(12.dp))
-                            Text(text = "Select Items", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(text = stringResource(R.string.menu_items), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
 
                             if (isLoadingMenu) {
                                 Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
                             } else if (realMenu.isEmpty()) {
-                                Text("No items available right now.", modifier = Modifier.padding(vertical = 16.dp), color = Color.Gray)
+                                Text(stringResource(R.string.no_products_yet), modifier = Modifier.padding(vertical = 16.dp), color = Color.Gray)
                             } else {
                                 realMenu.forEach { item ->
                                     val quantity = cartQuantities[item.name] ?: 0
@@ -401,7 +414,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                                     onClick = { cartQuantities[item.name] = 1 }, shape = RoundedCornerShape(12.dp),
                                                     contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
                                                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
-                                                ) { Text("ADD +", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium) }
+                                                ) { Text(stringResource(R.string.add_to_cart), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium) }
                                             } else {
                                                 Row(modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 4.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
                                                     IconButton(onClick = { if (quantity <= 1) cartQuantities.remove(item.name) else cartQuantities[item.name] = quantity - 1 }, modifier = Modifier.size(28.dp)) {
@@ -427,7 +440,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                         onClick = { isCheckoutStep = true }, // MOVES TO CHECKOUT VIEW
                                         modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                                     ) {
-                                        Text(text = "Checkout ($totalItems items) • ₹$subtotal", fontSize = MaterialTheme.typography.titleMedium.fontSize, fontWeight = FontWeight.Bold, color = Color.White)
+                                        Text(text = stringResource(R.string.checkout_items_total, totalItems, subtotal), fontSize = MaterialTheme.typography.titleMedium.fontSize, fontWeight = FontWeight.Bold, color = Color.White)
                                     }
                                     Spacer(modifier = Modifier.height(16.dp))
                                 }
@@ -439,42 +452,42 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                         Column(modifier = Modifier.weight(1f).padding(horizontal = 20.dp).verticalScroll(rememberScrollState())) {
                             Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                                 IconButton(onClick = { isCheckoutStep = false }, modifier = Modifier.padding(end = 8.dp)) {
-                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to Menu", tint = MaterialTheme.colorScheme.primary)
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), tint = MaterialTheme.colorScheme.primary)
                                 }
-                                Text(text = "Checkout", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                Text(text = stringResource(R.string.order_summary), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             }
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            Text(text = "Delivery & Preferences", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(text = stringResource(R.string.delivery_option), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                FilterChip(selected = deliveryOption == "Pickup", onClick = { deliveryOption = "Pickup" }, label = { Text("Stall Pickup (Free)") }, shape = RoundedCornerShape(12.dp))
-                                FilterChip(selected = deliveryOption == "Nearby", onClick = { deliveryOption = "Nearby" }, label = { Text("Nearby Delivery (+₹10)") }, shape = RoundedCornerShape(12.dp))
+                                FilterChip(selected = deliveryOption == "Pickup", onClick = { deliveryOption = "Pickup" }, label = { Text(stringResource(R.string.stall_pickup_free)) }, shape = RoundedCornerShape(12.dp))
+                                FilterChip(selected = deliveryOption == "Nearby", onClick = { deliveryOption = "Nearby" }, label = { Text(stringResource(R.string.nearby_delivery_fee)) }, shape = RoundedCornerShape(12.dp))
                             }
                             Spacer(modifier = Modifier.height(10.dp))
-                            OutlinedTextField(value = specialInstructions, onValueChange = { specialInstructions = it }, placeholder = { Text("Special instructions (e.g. extra spicy)") }, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), singleLine = true)
+                            OutlinedTextField(value = specialInstructions, onValueChange = { specialInstructions = it }, placeholder = { Text(stringResource(R.string.special_instructions_hint)) }, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), singleLine = true)
 
                             Spacer(modifier = Modifier.height(24.dp))
-                            Text(text = "Bill Summary", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Text(text = stringResource(R.string.order_summary), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
 
                             Surface(shape = RoundedCornerShape(14.dp), color = BillSummaryBackground, modifier = Modifier.fillMaxWidth()) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Items Subtotal ($totalItems items)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                        Text(stringResource(R.string.items_subtotal, totalItems), style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                                         Text("₹$subtotal", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                     }
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Text("Delivery Fee", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                                        Text(if (deliveryFee == 0) "FREE" else "₹10", style = MaterialTheme.typography.bodyMedium, color = if (deliveryFee == 0) StatusCompleted else Color.DarkGray)
+                                        Text(stringResource(R.string.delivery_fee), style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                        Text(if (deliveryFee == 0) stringResource(R.string.free) else "₹10", style = MaterialTheme.typography.bodyMedium, color = if (deliveryFee == 0) StatusCompleted else Color.DarkGray)
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
                                     HorizontalDivider(color = BillDividerColor, thickness = 0.8.dp)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Total Payable", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        Text(stringResource(R.string.total_payable), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                         Text("₹$totalPayable", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                                     }
                                 }
@@ -499,7 +512,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                 ) {
                                     Icon(Icons.Filled.ShoppingBag, contentDescription = null, tint = Color.White)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = "Place Order", fontSize = MaterialTheme.typography.titleMedium.fontSize, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(text = stringResource(R.string.place_order), fontSize = MaterialTheme.typography.titleMedium.fontSize, fontWeight = FontWeight.Bold, color = Color.White)
                                 }
                                 Spacer(modifier = Modifier.height(16.dp))
                             }
@@ -513,18 +526,18 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
             AlertDialog(
                 onDismissRequest = { showOrderSuccess = false },
                 icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(48.dp)) },
-                title = { Text("Order Placed Successfully!", fontWeight = FontWeight.Bold) },
-                text = { Text("Your order has been written to Firestore and the vendor has received your request. Track its status in the ‘My Orders’ tab.") },
-                confirmButton = { Button(onClick = { showOrderSuccess = false }) { Text("Awesome") } }
+                title = { Text(stringResource(R.string.order_placed_title), fontWeight = FontWeight.Bold) },
+                text = { Text(stringResource(R.string.order_placed_msg, "")) },
+                confirmButton = { Button(onClick = { showOrderSuccess = false }) { Text(stringResource(R.string.ok)) } }
             )
         }
         orderErrorMessage?.let { errMsg ->
             AlertDialog(
                 onDismissRequest = { orderErrorMessage = null },
                 icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp)) },
-                title = { Text("Order Failed", fontWeight = FontWeight.Bold) },
+                title = { Text(stringResource(R.string.order_failed_title), fontWeight = FontWeight.Bold) },
                 text = { Text(errMsg) },
-                confirmButton = { Button(onClick = { orderErrorMessage = null }) { Text("OK") } }
+                confirmButton = { Button(onClick = { orderErrorMessage = null }) { Text(stringResource(R.string.ok)) } }
             )
         }
     }
@@ -537,29 +550,35 @@ fun CustomerProfileScreen(
     name: String, phone: String, onNameChange: (String) -> Unit, onPhoneChange: (String) -> Unit, onLogout: () -> Unit
 ) {
     var currentSubScreen by remember { mutableStateOf("MAIN") }
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
     when (currentSubScreen) {
         "MAIN" -> {
             Column(modifier = Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Box(modifier = Modifier.size(100.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Filled.Person, contentDescription = "Profile", modifier = Modifier.size(50.dp), tint = MaterialTheme.colorScheme.primary)
+                    Icon(Icons.Filled.Person, contentDescription = stringResource(R.string.tab_profile), modifier = Modifier.size(50.dp), tint = MaterialTheme.colorScheme.primary)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
                 Text(phone, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                 Spacer(modifier = Modifier.height(32.dp))
-                ProfileOptionCard(icon = Icons.Filled.History, title = "Order History") { currentSubScreen = "HISTORY" }
-                ProfileOptionCard(icon = Icons.Filled.Settings, title = "Account Settings") { currentSubScreen = "SETTINGS" }
+                ProfileOptionCard(icon = Icons.Filled.History, title = stringResource(R.string.order_history)) { currentSubScreen = "HISTORY" }
+                ProfileOptionCard(icon = Icons.Filled.Settings, title = stringResource(R.string.account_settings)) { currentSubScreen = "SETTINGS" }
+                ProfileOptionCard(icon = Icons.Filled.Language, title = stringResource(R.string.language)) { showLanguageDialog = true }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(
                     onClick = onLogout, modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error), shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = stringResource(R.string.cd_logout))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Logout", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                    Text(stringResource(R.string.logout), fontSize = MaterialTheme.typography.titleMedium.fontSize)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+            if (showLanguageDialog) {
+                LanguageSelectionDialog(onDismiss = { showLanguageDialog = false })
             }
         }
         "HISTORY" -> CustomerOrderHistoryScreen(onBack = { currentSubScreen = "MAIN" })
@@ -597,8 +616,8 @@ fun CustomerOrderHistoryScreen(onBack: () -> Unit) {
     )
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
-            Text("Order History", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), tint = MaterialTheme.colorScheme.primary) }
+            Text(stringResource(R.string.order_history), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             items(orders) { order ->
@@ -632,8 +651,8 @@ fun CustomerSettingsScreen(currentName: String, currentPhone: String, onSave: (S
     var tempPhone by remember { mutableStateOf(currentPhone) }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
-            Text("Account Settings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), tint = MaterialTheme.colorScheme.primary) }
+            Text(stringResource(R.string.account_settings), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
         Card(
             modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
@@ -641,19 +660,19 @@ fun CustomerSettingsScreen(currentName: String, currentPhone: String, onSave: (S
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 OutlinedTextField(
-                    value = tempName, onValueChange = { tempName = it }, label = { Text("Full Name") }, singleLine = true,
+                    value = tempName, onValueChange = { tempName = it }, label = { Text(stringResource(R.string.full_name)) }, singleLine = true,
                     shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
-                    value = tempPhone, onValueChange = { tempPhone = it }, label = { Text("Phone Number") }, singleLine = true,
+                    value = tempPhone, onValueChange = { tempPhone = it }, label = { Text(stringResource(R.string.phone_number)) }, singleLine = true,
                     shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = { if (tempName.isNotBlank() && tempPhone.isNotBlank()) onSave(tempName, tempPhone) },
                     modifier = Modifier.fillMaxWidth().height(50.dp), shape = RoundedCornerShape(12.dp)
-                ) { Text("Save Changes") }
+                ) { Text(stringResource(R.string.save_changes)) }
             }
         }
     }
@@ -666,15 +685,15 @@ fun CustomerFavouritesScreen(
     onRemoveFavourite: (String) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
-        Text(text = "My Favourite Vendors", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(R.string.my_favourite_vendors), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(20.dp))
         if (favouriteVendorIds.isEmpty()) {
             Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(imageVector = Icons.Filled.FavoriteBorder, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.Gray)
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("No favourite vendors yet!")
+                Text(stringResource(R.string.no_favourites_title))
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = onExploreClick) { Text("Explore Vendors") }
+                Button(onClick = onExploreClick) { Text(stringResource(R.string.explore_vendors)) }
             }
         } else {
             LazyColumn(
@@ -691,10 +710,10 @@ fun CustomerFavouritesScreen(
                             Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                                 Icon(imageVector = Icons.Filled.Favorite, contentDescription = null, tint = Color.Red)
                                 Spacer(modifier = Modifier.width(12.dp))
-                                val vendorName = if (vendorId.startsWith("dummy_")) "Demo Vendor" else "Live Local Vendor"
+                                val vendorName = if (vendorId.startsWith("dummy_")) stringResource(R.string.demo_vendor) else stringResource(R.string.live_local_vendor)
                                 Column {
                                     Text(text = vendorName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                    Text(text = "Saved to Favourites", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                    Text(text = stringResource(R.string.saved_to_favourites), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                 }
                             }
                         }
@@ -723,12 +742,19 @@ fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
     }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Text(text = "My Orders", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-        Text(text = "Demo orders — sample data only", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        Text(text = stringResource(R.string.my_orders), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(R.string.demo_orders_notice), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         Spacer(modifier = Modifier.height(16.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(orderFilters) { filter ->
-                FilterChip(selected = selectedOrderFilter == filter, onClick = { selectedOrderFilter = filter }, label = { Text(filter) })
+                val filterLabel = when (filter) {
+                    "All" -> stringResource(R.string.filter_all)
+                    "Pending" -> stringResource(R.string.status_pending)
+                    "Preparing" -> stringResource(R.string.status_preparing)
+                    "Completed" -> stringResource(R.string.status_completed)
+                    else -> filter
+                }
+                FilterChip(selected = selectedOrderFilter == filter, onClick = { selectedOrderFilter = filter }, label = { Text(filterLabel) })
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
@@ -737,10 +763,10 @@ fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(imageVector = Icons.Filled.Inbox, contentDescription = null, modifier = Modifier.size(56.dp), tint = Color.Gray)
                 Spacer(modifier = Modifier.height(12.dp))
-                Text(text = "No orders found", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = "No orders match the selected status.", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                Text(text = stringResource(R.string.no_orders_yet), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(text = stringResource(R.string.no_orders_match), style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                 Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { selectedOrderFilter = "All" }) { Text("Show All Orders") }
+                Button(onClick = { selectedOrderFilter = "All" }) { Text(stringResource(R.string.show_all_orders)) }
             }
         }
 
@@ -751,7 +777,14 @@ fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(text = order.id, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            Text(text = order.status, color = statusColors[order.status] ?: Color.Gray, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+                            val statusLabel = when (order.status.uppercase()) {
+                                "PENDING" -> stringResource(R.string.status_pending)
+                                "PREPARING" -> stringResource(R.string.status_preparing)
+                                "COMPLETED" -> stringResource(R.string.status_completed)
+                                "DECLINED" -> stringResource(R.string.status_declined)
+                                else -> order.status
+                            }
+                            Text(text = statusLabel, color = statusColors[order.status] ?: Color.Gray, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                         Text(text = order.vendorName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)

@@ -36,9 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.example.digitalstreetvendornetwork.R
 
 /**
  * Visual state of a single step within [OrderProgressTracker].
@@ -147,7 +149,7 @@ fun OrderProgressTracker(
     ) {
         // Step 0: Placed
         ProgressStepItem(
-            label = "Placed",
+            label = stringResource(R.string.step_placed),
             state = step0State,
             pulseScale = pulseScale,
             pulseAlpha = pulseAlpha
@@ -163,7 +165,7 @@ fun OrderProgressTracker(
 
         // Step 1: Preparing or Declined
         ProgressStepItem(
-            label = if (isDeclined) "Declined" else "Preparing",
+            label = if (isDeclined) stringResource(R.string.step_declined) else stringResource(R.string.step_preparing),
             state = step1State,
             pulseScale = pulseScale,
             pulseAlpha = pulseAlpha
@@ -179,7 +181,7 @@ fun OrderProgressTracker(
 
         // Step 2: Completed
         ProgressStepItem(
-            label = "Completed",
+            label = stringResource(R.string.step_completed),
             state = step2State,
             pulseScale = pulseScale,
             pulseAlpha = pulseAlpha
@@ -268,7 +270,7 @@ private fun ProgressStepItem(
                     StepState.DONE -> {
                         Icon(
                             imageVector = Icons.Filled.Check,
-                            contentDescription = "Completed",
+                            contentDescription = stringResource(R.string.cd_completed),
                             tint = Color.White,
                             modifier = Modifier.size(14.dp)
                         )
@@ -276,7 +278,7 @@ private fun ProgressStepItem(
                     StepState.DECLINED -> {
                         Icon(
                             imageVector = Icons.Filled.Close,
-                            contentDescription = "Declined",
+                            contentDescription = stringResource(R.string.cd_declined),
                             tint = Color.White,
                             modifier = Modifier.size(14.dp)
                         )

@@ -18,10 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.LanguageSelectionDialog
+import com.example.digitalstreetvendornetwork.R
 import com.example.digitalstreetvendornetwork.ui.components.OrderProgressTracker
 import com.example.digitalstreetvendornetwork.ui.components.SwipeToDeleteContainer
 import com.example.digitalstreetvendornetwork.ui.theme.*
@@ -50,7 +53,12 @@ data class VendorReview(val id: Int, val customerName: String, val rating: Int, 
 fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
     val viewModel: VendorViewModel = viewModel()
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Catalogue", "Location", "Orders", "Profile")
+    val tabs = listOf(
+        stringResource(R.string.tab_catalogue),
+        stringResource(R.string.tab_location),
+        stringResource(R.string.tab_orders),
+        stringResource(R.string.tab_profile)
+    )
 
     val productList by viewModel.productList.collectAsState(initial = emptyList())
     val stallName by viewModel.stallName.collectAsState(initial = "Loading...")
@@ -147,13 +155,13 @@ fun VendorCatalogueScreen(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { showDialog = false },
-            title = { Text("Add New Product") },
+            title = { Text(stringResource(R.string.add_new_product)) },
             text = {
                 Column {
-                    OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text("Product Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
-                    OutlinedTextField(value = newPrice, onValueChange = { newPrice = it }, label = { Text("Price (e.g. 50)") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = newName, onValueChange = { newName = it }, label = { Text(stringResource(R.string.product_name_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = newPrice, onValueChange = { newPrice = it }, label = { Text(stringResource(R.string.price_label)) }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), singleLine = true, modifier = Modifier.fillMaxWidth())
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(value = newDesc, onValueChange = { newDesc = it }, label = { Text("Description") }, modifier = Modifier.fillMaxWidth())
+                    OutlinedTextField(value = newDesc, onValueChange = { newDesc = it }, label = { Text(stringResource(R.string.desc_label)) }, modifier = Modifier.fillMaxWidth())
                 }
             },
             confirmButton = {
@@ -162,9 +170,9 @@ fun VendorCatalogueScreen(
                         onAddProduct(newName, if (newPrice.startsWith("₹")) newPrice else "₹$newPrice", newDesc)
                         newName = ""; newPrice = ""; newDesc = ""; showDialog = false
                     }
-                }) { Text("Save") }
+                }) { Text(stringResource(R.string.save)) }
             },
-            dismissButton = { TextButton(onClick = { showDialog = false }) { Text("Cancel") } }
+            dismissButton = { TextButton(onClick = { showDialog = false }) { Text(stringResource(R.string.cancel)) } }
         )
     }
 
@@ -178,8 +186,8 @@ fun VendorCatalogueScreen(
                 }
                 productToDelete = null
             },
-            title = { Text("Delete ${product.name}?") },
-            text = { Text("Are you sure you want to remove this product from your catalogue?") },
+            title = { Text(stringResource(R.string.delete_confirm_title, product.name)) },
+            text = { Text(stringResource(R.string.delete_confirm_msg)) },
             confirmButton = {
                 Button(
                     onClick = {
@@ -189,7 +197,7 @@ fun VendorCatalogueScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Delete")
+                    Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
@@ -202,7 +210,7 @@ fun VendorCatalogueScreen(
                         productToDelete = null
                     }
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -211,7 +219,7 @@ fun VendorCatalogueScreen(
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { showDialog = true }, containerColor = MaterialTheme.colorScheme.primary) {
-                Icon(Icons.Filled.Add, contentDescription = "Add Product", tint = Color.White)
+                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.add_product), tint = Color.White)
             }
         }
     ) { paddingValues ->
@@ -251,7 +259,7 @@ fun VendorCatalogueScreen(
                                     pendingDismissState = null
                                     productToDelete = product
                                 }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = "Delete Product", tint = MaterialTheme.colorScheme.error)
+                                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_product), tint = MaterialTheme.colorScheme.error)
                                 }
                             }
                         }
@@ -290,7 +298,7 @@ fun VendorLocationScreen(
             ) {
                 Marker(
                     state = markerState,
-                    title = "My Stall",
+                    title = stringResource(R.string.my_stall),
                     draggable = true,
                     onClick = { false }   // don't consume — let map click also fire
                 )
@@ -319,12 +327,12 @@ fun VendorLocationScreen(
             ) {
                 Column {
                     Text(
-                        text = "Broadcast Location",
+                        text = stringResource(R.string.broadcast_location),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = if (isBroadcasting) "Visible to customers on map" else "Hidden from customer map",
+                        text = if (isBroadcasting) stringResource(R.string.visible_to_customers) else stringResource(R.string.hidden_from_customers),
                         style = MaterialTheme.typography.bodySmall,
                         color = if (isBroadcasting) MaterialTheme.colorScheme.secondary else Color.Gray
                     )
@@ -350,6 +358,7 @@ fun VendorProfileScreen(
     onLogout: () -> Unit
 ) {
     var currentSubScreen by remember { mutableStateOf("MAIN") }
+    var showLanguageDialog by remember { mutableStateOf(false) }
 
     when (currentSubScreen) {
         "MAIN" -> {
@@ -363,7 +372,7 @@ fun VendorProfileScreen(
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 4.dp)) {
                     Box(modifier = Modifier.size(10.dp).clip(CircleShape).background(if (isStallOpen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = if (isStallOpen) "Open • $operatingHours" else "Currently Closed", color = if (isStallOpen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
+                    Text(text = if (isStallOpen) stringResource(R.string.stall_open_hours, operatingHours) else stringResource(R.string.currently_closed), color = if (isStallOpen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error, fontWeight = FontWeight.Medium)
                 }
                 Spacer(modifier = Modifier.height(32.dp))
                 Card(onClick = { currentSubScreen = "EARNINGS" }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), shape = RoundedCornerShape(12.dp)) {
@@ -371,8 +380,8 @@ fun VendorProfileScreen(
                         Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Earnings & Reviews", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text("View daily revenue & customer ratings", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text(stringResource(R.string.earnings_and_reviews), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.earnings_and_reviews_sub), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         }
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
                     }
@@ -382,19 +391,34 @@ fun VendorProfileScreen(
                         Icon(Icons.Filled.Settings, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Business Settings", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text("Stall timings, UPI ID & status", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text(stringResource(R.string.business_settings), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.business_settings_sub), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                    }
+                }
+                // Language selection card
+                Card(onClick = { showLanguageDialog = true }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), shape = RoundedCornerShape(12.dp)) {
+                    Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Language, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.language), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.language_subtitle), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         }
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(onClick = onLogout, modifier = Modifier.fillMaxWidth().height(50.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error), shape = RoundedCornerShape(12.dp)) {
-                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = stringResource(R.string.cd_logout))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Close Shop (Logout)")
+                    Text(stringResource(R.string.close_shop_logout))
                 }
                 Spacer(modifier = Modifier.height(16.dp))
+            }
+            if (showLanguageDialog) {
+                LanguageSelectionDialog(onDismiss = { showLanguageDialog = false })
             }
         }
         "EARNINGS" -> VendorEarningsAndReviewsScreen(
@@ -434,19 +458,19 @@ fun VendorEarningsAndReviewsScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.cd_back),
                     tint = MaterialTheme.colorScheme.primary
                 )
             }
             Text(
-                "Earnings & Reviews",
+                stringResource(R.string.earnings_and_reviews),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold
             )
         }
 
         Text(
-            text = "Today's Summary",
+            text = stringResource(R.string.todays_summary),
             style = MaterialTheme.typography.titleSmall,
             color = Color.Gray,
             modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
@@ -472,7 +496,7 @@ fun VendorEarningsAndReviewsScreen(
             ) {
                 Column {
                     Text(
-                        text = "Total Revenue Today",
+                        text = stringResource(R.string.total_revenue_today),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
                     )
@@ -523,7 +547,7 @@ fun VendorEarningsAndReviewsScreen(
             ) {
                 Column {
                     Text(
-                        text = "Orders Completed Today",
+                        text = stringResource(R.string.orders_completed_today),
                         style = MaterialTheme.typography.labelLarge,
                         color = EarningsLabelGreen.copy(alpha = 0.8f)
                     )
@@ -572,13 +596,13 @@ fun VendorEarningsAndReviewsScreen(
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Customer Reviews",
+                        text = stringResource(R.string.customer_reviews),
                         style = MaterialTheme.typography.labelLarge,
                         color = Color.Gray
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "Coming in a future update",
+                        text = stringResource(R.string.coming_in_future_update),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.LightGray
                     )
@@ -608,27 +632,27 @@ fun VendorBusinessSettingsScreen(
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
-            Text("Business Settings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.cd_back), tint = MaterialTheme.colorScheme.primary) }
+            Text(stringResource(R.string.business_settings), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
         Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
-                        Text("Stall Status", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(if (isStallOpen) "Accepting customer orders" else "Hidden from customer map", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        Text(stringResource(R.string.stall_status), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(if (isStallOpen) stringResource(R.string.accepting_orders) else stringResource(R.string.hidden_from_customers), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                     }
                     Switch(checked = isStallOpen, onCheckedChange = onStallOpenChange)
                 }
                 HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-                OutlinedTextField(value = tempName, onValueChange = { tempName = it }, label = { Text("Stall Name") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = tempName, onValueChange = { tempName = it }, label = { Text(stringResource(R.string.stall_name)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(value = tempHours, onValueChange = { tempHours = it }, label = { Text("Operating Hours") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = tempHours, onValueChange = { tempHours = it }, label = { Text(stringResource(R.string.operating_hours_hint)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(value = tempUpi, onValueChange = { tempUpi = it }, label = { Text("Merchant UPI ID") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = tempUpi, onValueChange = { tempUpi = it }, label = { Text(stringResource(R.string.merchant_upi_id)) }, singleLine = true, modifier = Modifier.fillMaxWidth())
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(onClick = { onStallNameChange(tempName); onOperatingHoursChange(tempHours); onUpiIdChange(tempUpi); onBack() }, modifier = Modifier.fillMaxWidth().height(50.dp)) {
-                    Text("Save Changes")
+                    Text(stringResource(R.string.save_changes))
                 }
             }
         }
@@ -664,12 +688,12 @@ fun VendorOrdersScreen(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    "No orders yet",
+                    stringResource(R.string.no_orders_yet),
                     style = MaterialTheme.typography.titleMedium,
                     color = Color.Gray
                 )
                 Text(
-                    "New customer orders will appear here in real-time.",
+                    stringResource(R.string.no_orders_sub),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.LightGray
                 )
@@ -703,10 +727,10 @@ fun VendorOrderCard(
 ) {
     // Derive status badge colours
     val (statusColor, statusLabel) = when (order.status.uppercase()) {
-        "PENDING"   -> Pair(StatusPending, "Pending")
-        "PREPARING" -> Pair(StatusPreparing, "Preparing")
-        "COMPLETED" -> Pair(StatusCompleted, "Completed")
-        "DECLINED"  -> Pair(StatusDeclined, "Declined")
+        "PENDING"   -> Pair(StatusPending, stringResource(R.string.status_pending))
+        "PREPARING" -> Pair(StatusPreparing, stringResource(R.string.status_preparing))
+        "COMPLETED" -> Pair(StatusCompleted, stringResource(R.string.status_completed))
+        "DECLINED"  -> Pair(StatusDeclined, stringResource(R.string.status_declined))
         else        -> Pair(Color.Gray, order.status)
     }
 
@@ -725,7 +749,7 @@ fun VendorOrderCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Order #${order.orderId.takeLast(6).uppercase()}",
+                    text = stringResource(R.string.order_number, order.orderId.takeLast(6).uppercase()),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -749,7 +773,7 @@ fun VendorOrderCard(
 
             // ── Customer info ────────────────────────────────────────────────
             Text(
-                text = "Customer ID: ${order.customerId.take(12)}…",
+                text = stringResource(R.string.customer_id_label, order.customerId.take(12)),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
@@ -788,7 +812,7 @@ fun VendorOrderCard(
                         ) {
                             Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Accept", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.accept), fontWeight = FontWeight.Bold)
                         }
                         OutlinedButton(
                             onClick = { onUpdateStatus(order.orderId, "DECLINED") },
@@ -800,7 +824,7 @@ fun VendorOrderCard(
                         ) {
                             Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Decline", fontWeight = FontWeight.Bold)
+                            Text(stringResource(R.string.decline), fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -816,7 +840,7 @@ fun VendorOrderCard(
                     ) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Mark Complete", fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.mark_complete), fontWeight = FontWeight.Bold)
                     }
                 }
                 // COMPLETED / DECLINED: no action buttons — read-only terminal states

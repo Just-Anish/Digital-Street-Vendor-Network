@@ -22,6 +22,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
@@ -87,7 +88,7 @@ fun SplashScreen() {
             ) {
                 Icon(
                     imageVector = Icons.Filled.Storefront,
-                    contentDescription = "App Logo",
+                    contentDescription = stringResource(R.string.cd_app_logo),
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(68.dp)
                 )
@@ -103,7 +104,7 @@ fun SplashScreen() {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "Local Vends",
+                    text = stringResource(R.string.app_title),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -112,7 +113,7 @@ fun SplashScreen() {
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                    text = "Your neighbourhood market, digitized.",
+                    text = stringResource(R.string.app_tagline),
                     style = MaterialTheme.typography.bodyLarge,
                     color = Color.White.copy(alpha = 0.9f)
                 )

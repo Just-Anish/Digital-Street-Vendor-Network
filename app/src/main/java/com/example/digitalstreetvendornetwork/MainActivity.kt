@@ -1,9 +1,13 @@
 package com.example.digitalstreetvendornetwork
 
+import android.app.Activity
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.annotation.StringRes
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +19,8 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -26,6 +32,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocaleHelper.wrap(newBase))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -112,6 +122,8 @@ fun LoginScreen(
     onLoginSuccess: (String) -> Unit,
     onNavigateToSignup: () -> Unit
 ) {
+    val context = LocalContext.current
+    val currentLang = remember { LocaleHelper.getLanguage(context) }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var phoneError by remember { mutableStateOf(false) }
@@ -124,10 +136,64 @@ fun LoginScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(Icons.Filled.Storefront, contentDescription = "App Logo", modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary)
+        // Language switcher row at top: "English | हिंदी | मराठी"
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "English",
+                color = if (currentLang == "en") MaterialTheme.colorScheme.primary else Color.Gray,
+                fontWeight = if (currentLang == "en") FontWeight.Bold else FontWeight.Normal,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .clickable {
+                        if (currentLang != "en") {
+                            LocaleHelper.setLanguage(context, "en")
+                            (context as? Activity)?.recreate()
+                        }
+                    }
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+            Text(" | ", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "हिंदी",
+                color = if (currentLang == "hi") MaterialTheme.colorScheme.primary else Color.Gray,
+                fontWeight = if (currentLang == "hi") FontWeight.Bold else FontWeight.Normal,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .clickable {
+                        if (currentLang != "hi") {
+                            LocaleHelper.setLanguage(context, "hi")
+                            (context as? Activity)?.recreate()
+                        }
+                    }
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+            Text(" | ", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                text = "मराठी",
+                color = if (currentLang == "mr") MaterialTheme.colorScheme.primary else Color.Gray,
+                fontWeight = if (currentLang == "mr") FontWeight.Bold else FontWeight.Normal,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier
+                    .clickable {
+                        if (currentLang != "mr") {
+                            LocaleHelper.setLanguage(context, "mr")
+                            (context as? Activity)?.recreate()
+                        }
+                    }
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            )
+        }
+
+        Icon(Icons.Filled.Storefront, contentDescription = stringResource(R.string.cd_app_logo), modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Local Vends", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        Text("Your neighbourhood market, digitized.", style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+        Text(stringResource(R.string.app_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.app_tagline), style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
         Spacer(modifier = Modifier.height(32.dp))
 
         Card(
@@ -140,7 +206,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it; phoneError = false; errorMessage = null },
-                    label = { Text("Phone Number") },
+                    label = { Text(stringResource(R.string.phone_number)) },
                     leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null) },
                     singleLine = true,
                     isError = phoneError,
@@ -152,7 +218,7 @@ fun LoginScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it; errorMessage = null },
-                    label = { Text("Password") },
+                    label = { Text(stringResource(R.string.password)) },
                     leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
@@ -177,7 +243,7 @@ fun LoginScreen(
                             return@Button
                         }
                         if (password.isBlank()) {
-                            errorMessage = "Password cannot be empty."
+                            errorMessage = context.getString(R.string.error_empty_password)
                             return@Button
                         }
                         isLoading = true
@@ -187,7 +253,7 @@ fun LoginScreen(
                                 val role = authRepo.login(phone, password)
                                 onLoginSuccess(role)
                             } catch (e: Exception) {
-                                errorMessage = friendlyAuthError(e)
+                                errorMessage = context.getString(friendlyAuthError(e))
                             } finally {
                                 isLoading = false
                             }
@@ -204,13 +270,13 @@ fun LoginScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Secure Login", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                        Text(stringResource(R.string.secure_login), fontSize = MaterialTheme.typography.titleMedium.fontSize)
                     }
                 }
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onNavigateToSignup) { Text("Create a new account") }
+        TextButton(onClick = onNavigateToSignup) { Text(stringResource(R.string.create_new_account)) }
     }
 }
 
@@ -222,6 +288,7 @@ fun SignupScreen(
     onSignupSuccess: (String) -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -235,7 +302,7 @@ fun SignupScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("Join Local Vends", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+        Text(stringResource(R.string.join_local_vends), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(24.dp))
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -252,18 +319,18 @@ fun SignupScreen(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(selected = selectedRole == "VENDOR", onClick = { selectedRole = "VENDOR" })
-                        Text("Vendor")
+                        Text(stringResource(R.string.role_vendor))
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         RadioButton(selected = selectedRole == "CUSTOMER", onClick = { selectedRole = "CUSTOMER" })
-                        Text("Customer")
+                        Text(stringResource(R.string.role_customer))
                     }
                 }
 
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it; errorMessage = null },
-                    label = { Text("Full Name") },
+                    label = { Text(stringResource(R.string.full_name)) },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -272,7 +339,7 @@ fun SignupScreen(
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it; errorMessage = null },
-                    label = { Text("Phone") },
+                    label = { Text(stringResource(R.string.phone)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     shape = RoundedCornerShape(12.dp),
@@ -282,7 +349,7 @@ fun SignupScreen(
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it; errorMessage = null },
-                    label = { Text("Password") },
+                    label = { Text(stringResource(R.string.password)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
                     shape = RoundedCornerShape(12.dp),
@@ -301,9 +368,9 @@ fun SignupScreen(
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = {
-                        if (name.isBlank()) { errorMessage = "Name cannot be empty."; return@Button }
-                        if (phone.length != 10 || !phone.all { it.isDigit() }) { errorMessage = "Enter a valid 10-digit phone number."; return@Button }
-                        if (password.isBlank()) { errorMessage = "Password cannot be empty."; return@Button }
+                        if (name.isBlank()) { errorMessage = context.getString(R.string.error_empty_name); return@Button }
+                        if (phone.length != 10 || !phone.all { it.isDigit() }) { errorMessage = context.getString(R.string.error_invalid_phone_10_digit); return@Button }
+                        if (password.isBlank()) { errorMessage = context.getString(R.string.error_empty_password); return@Button }
                         isLoading = true
                         errorMessage = null
                         scope.launch {
@@ -311,7 +378,7 @@ fun SignupScreen(
                                 val role = authRepo.signUp(name, phone, password, selectedRole)
                                 onSignupSuccess(role)
                             } catch (e: Exception) {
-                                errorMessage = friendlyAuthError(e)
+                                errorMessage = context.getString(friendlyAuthError(e))
                             } finally {
                                 isLoading = false
                             }
@@ -328,37 +395,38 @@ fun SignupScreen(
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     } else {
-                        Text("Create Account")
+                        Text(stringResource(R.string.create_account))
                     }
                 }
             }
         }
         Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onNavigateToLogin) { Text("Already have an account? Login") }
+        TextButton(onClick = onNavigateToLogin) { Text(stringResource(R.string.already_have_account)) }
     }
 }
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
 /**
- * Converts Firebase exception messages into short, user-facing strings.
+ * Converts Firebase exception messages into short, user-facing string resource IDs.
  * Avoids leaking internal Firebase error codes to the UI.
  */
-private fun friendlyAuthError(e: Exception): String {
-    val msg = e.message ?: return "An unexpected error occurred. Please try again."
+@StringRes
+private fun friendlyAuthError(e: Exception): Int {
+    val msg = e.message ?: return R.string.error_unexpected
     return when {
         "EMAIL_EXISTS" in msg || "email address is already in use" in msg ->
-            "This phone number is already registered. Please log in."
+            R.string.error_email_exists
         "INVALID_EMAIL" in msg ->
-            "Invalid phone number format. Please check and try again."
+            R.string.error_invalid_phone
         "WRONG_PASSWORD" in msg || "password is invalid" in msg ->
-            "Incorrect password. Please try again."
+            R.string.error_wrong_password
         "USER_NOT_FOUND" in msg || "no user record" in msg ->
-            "No account found for this phone number. Please sign up."
+            R.string.error_user_not_found
         "WEAK_PASSWORD" in msg || "Password should be" in msg ->
-            "Password must be at least 6 characters."
+            R.string.error_weak_password
         "NETWORK_ERROR" in msg || "network" in msg.lowercase() ->
-            "Network error. Please check your connection."
-        else -> "Authentication failed. Please try again."
+            R.string.error_network
+        else -> R.string.error_auth_failed
     }
 }

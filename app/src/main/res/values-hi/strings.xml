@@ -1,0 +1,187 @@
+<resources>
+    <string name="app_name">Digital Street Vendor Network</string>
+    <string name="app_title">Local Vends</string>
+    <string name="app_tagline">आपका नजदीकी बाजार, अब डिजिटल।</string>
+    <string name="cd_app_logo">ऐप लोगो</string>
+    <string name="cd_close">बंद करें</string>
+    <string name="cd_back">पीछे</string>
+    <string name="cd_logout">लॉगआउट</string>
+    <string name="delete">हटाएं</string>
+
+    <!-- Progress Tracker -->
+    <string name="step_placed">ऑर्डर मिला</string>
+    <string name="step_preparing">तैयार हो रहा है</string>
+    <string name="step_completed">पूरा हुआ</string>
+    <string name="step_declined">अस्वीकार किया</string>
+    <string name="cd_completed">पूरा हुआ</string>
+    <string name="cd_declined">अस्वीकार किया</string>
+
+    <!-- Language & Dialogs -->
+    <string name="language">भाषा</string>
+    <string name="language_subtitle">English, हिंदी, मराठी</string>
+    <string name="select_language">भाषा चुनें</string>
+    <string name="lang_en">English</string>
+    <string name="lang_hi">हिंदी</string>
+    <string name="lang_mr">मराठी</string>
+    <string name="ok">ठीक है</string>
+    <string name="cancel">रद्द करें</string>
+
+    <!-- Auth / Login / Signup -->
+    <string name="phone_number">फ़ोन नंबर</string>
+    <string name="password">पासवर्ड</string>
+    <string name="secure_login">लॉग इन करें</string>
+    <string name="create_new_account">नया खाता बनाएं</string>
+    <string name="join_local_vends">Local Vends से जुड़ें</string>
+    <string name="role_vendor">दुकानदार</string>
+    <string name="role_customer">ग्राहक</string>
+    <string name="full_name">पूरा नाम</string>
+    <string name="phone">फ़ोन</string>
+    <string name="create_account">खाता बनाएं</string>
+    <string name="already_have_account">पहले से खाता है? लॉग इन करें</string>
+
+    <!-- Auth Errors -->
+    <string name="error_empty_password">पासवर्ड खाली नहीं हो सकता।</string>
+    <string name="error_empty_name">नाम खाली नहीं हो सकता।</string>
+    <string name="error_invalid_phone_10_digit">कृपया 10 अंकों का मान्य फ़ोन नंबर दर्ज करें।</string>
+    <string name="error_email_exists">यह फ़ोन नंबर पहले से पंजीकृत है। कृपया लॉग इन करें।</string>
+    <string name="error_invalid_phone">फ़ोन नंबर अमान्य है। कृपया जाँचें।</string>
+    <string name="error_wrong_password">गलत पासवर्ड। कृपया पुनः प्रयास करें।</string>
+    <string name="error_user_not_found">इस नंबर पर कोई खाता नहीं मिला। कृपया खाता बनाएं।</string>
+    <string name="error_weak_password">पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।</string>
+    <string name="error_network">नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जाँचें।</string>
+    <string name="error_auth_failed">प्रमाणीकरण विफल रहा। कृपया पुनः प्रयास करें।</string>
+    <string name="error_unexpected">एक अनपेक्षित त्रुटि हुई। कृपया पुनः प्रयास करें।</string>
+
+    <!-- Tabs -->
+    <string name="tab_catalogue">सामान सूची</string>
+    <string name="tab_location">लोकेशन</string>
+    <string name="tab_orders">ऑर्डर</string>
+    <string name="tab_profile">प्रोफाइल</string>
+    <string name="tab_discover">दुकानें खोजें</string>
+    <string name="tab_favourites">पसंदीदा</string>
+    <string name="tab_my_orders">मेरे ऑर्डर</string>
+
+    <!-- Statuses -->
+    <string name="status_pending">लंबित</string>
+    <string name="status_preparing">तैयार हो रहा है</string>
+    <string name="status_completed">पूरा हुआ</string>
+    <string name="status_declined">अस्वीकार किया</string>
+
+    <!-- Vendor Screens -->
+    <string name="save">सहेजें</string>
+    <string name="delete_confirm_title">%1$s को हटाएं?</string>
+    <string name="delete_confirm_msg">क्या आप वाकई इस सामान को अपनी सूची से हटाना चाहते हैं?</string>
+    <string name="desc_label">विवरण</string>
+    <string name="price_label">कीमत (उदा. 50)</string>
+    <string name="my_stall">मेरी दुकान</string>
+    <string name="broadcast_location">लोकेशन दिखाएं</string>
+    <string name="visible_to_customers">नक्शे पर ग्राहकों को दिख रही है</string>
+    <string name="hidden_from_customers">ग्राहकों के नक्शे से छिपी है</string>
+    <string name="todays_summary">आज का सारांश</string>
+    <string name="total_revenue_today">आज की कुल कमाई</string>
+    <string name="orders_completed_today">आज पूरे हुए ऑर्डर</string>
+    <string name="coming_in_future_update">जल्द आ रहा है</string>
+    <string name="accepting_orders">ग्राहकों के ऑर्डर स्वीकार कर रहे हैं</string>
+    <string name="merchant_upi_id">दुकानदार की UPI ID</string>
+    <string name="add_product">सामान जोड़ें</string>
+    <string name="no_products_yet">अभी कोई सामान नहीं जोड़ा गया</string>
+    <string name="no_products_hint">पहला सामान जोड़ने के लिए नीचे दिए गए + बटन को दबाएं।</string>
+    <string name="delete_product">सामान हटाएं</string>
+    <string name="add_new_product">नया सामान जोड़ें</string>
+    <string name="product_name_hint">सामान का नाम (उदा. वड़ा पाव)</string>
+    <string name="price_hint">कीमत (₹)</string>
+    <string name="desc_hint">विवरण (उदा. चटनी के साथ गरमा गरम)</string>
+    <string name="add_to_menu">मेनू में जोड़ें</string>
+    <string name="live_location_broadcast">लाइव लोकेशन चालू करें</string>
+    <string name="broadcast_subtitle">नजदीकी ग्राहकों को नक्शे पर आपकी दुकान देखने दें।</string>
+    <string name="broadcast_live_badge">आप ग्राहकों के नक्शे पर दिख रहे हैं।</string>
+    <string name="broadcast_hidden_badge">आपकी दुकान ग्राहकों से छिपी हुई है।</string>
+    <string name="location_coords">लोकेशन: %1$.4f, %2$.4f</string>
+    <string name="broadcast_hint">GPS लोकेशन चालू रखने से नजदीकी ग्राहक आपकी दुकान आसानी से ढूंढ सकते हैं।</string>
+    <string name="stall_open_hours">खुला है • %1$s</string>
+    <string name="currently_closed">अभी बंद है</string>
+    <string name="earnings_and_reviews">कमाई और समीक्षाएं</string>
+    <string name="earnings_and_reviews_sub">दैनिक कमाई और ग्राहकों की रेटिंग देखें</string>
+    <string name="business_settings">दुकान की सेटिंग</string>
+    <string name="business_settings_sub">दुकान का समय, UPI ID और स्थिति</string>
+    <string name="close_shop_logout">दुकान बंद करें (लॉगआउट)</string>
+    <string name="today_revenue">आज की कमाई</string>
+    <string name="completed_orders_title">पूरे हुए ऑर्डर</string>
+    <string name="completed_orders_count">%1$d ऑर्डर पूरे हुए</string>
+    <string name="avg_rating">औसत रेटिंग</string>
+    <string name="based_on_reviews">%1$d ग्राहकों की समीक्षाओं के आधार पर</string>
+    <string name="customer_reviews">ग्राहकों की समीक्षाएं</string>
+    <string name="stall_status">दुकान की स्थिति</string>
+    <string name="stall_status_sub">ग्राहकों के लिए दुकान खुली या बंद सेट करें</string>
+    <string name="open_for_business">दुकान खुली है</string>
+    <string name="closed">बंद है</string>
+    <string name="stall_name">दुकान का नाम</string>
+    <string name="operating_hours_hint">दुकान का समय (उदा. सुबह 9 - रात 9)</string>
+    <string name="upi_id_hint">भुगतान के लिए UPI ID (उदा. vendor@upi)</string>
+    <string name="save_settings">सेटिंग सहेजें</string>
+    <string name="no_orders_yet">अभी कोई ऑर्डर नहीं है</string>
+    <string name="no_orders_sub">ग्राहकों के नए ऑर्डर यहां तुरंत दिखाई देंगे।</string>
+    <string name="order_number">ऑर्डर #%1$s</string>
+    <string name="customer_id_label">ग्राहक ID: %1$s…</string>
+    <string name="accept">स्वीकारें</string>
+    <string name="decline">अस्वीकार करें</string>
+    <string name="mark_complete">पूर्ण मार्क करें</string>
+
+    <!-- Customer Screens -->
+    <string name="discover_vendors">स्ट्रीट वेंडर खोजें</string>
+    <string name="discover_subtitle">आसपास का स्ट्रीट फूड, फल और सब्जियां खोजें</string>
+    <string name="search_placeholder">दुकान या खाना खोजें...</string>
+    <string name="filter_all">सभी</string>
+    <string name="category_street_food">स्ट्रीट फूड</string>
+    <string name="category_vegetables">सब्जियां</string>
+    <string name="category_fruits">फल</string>
+    <string name="category_chaat">चाट</string>
+    <string name="meters_away">%1$d मी दूर</string>
+    <string name="open_now">अभी खुला है</string>
+    <string name="view_menu_order">मेनू देखें और ऑर्डर करें</string>
+    <string name="no_vendors_found">कोई दुकान नहीं मिली</string>
+    <string name="no_vendors_sub">कुछ और खोज कर देखें।</string>
+    <string name="vendor_details">दुकान का विवरण</string>
+    <string name="categories_label">श्रेणियां: %1$s</string>
+    <string name="menu_items">मेनू सामान</string>
+    <string name="add_to_cart">कार्ट में जोड़ें</string>
+    <string name="item_added">सामान कार्ट में जोड़ा गया</string>
+    <string name="your_cart">आपकी कार्ट</string>
+    <string name="order_summary">ऑर्डर सारांश</string>
+    <string name="delivery_option">डिलीवरी विकल्प</string>
+    <string name="stall_pickup_free">दुकान से पिकअप (मुफ्त)</string>
+    <string name="nearby_delivery_fee">नजदीकी डिलीवरी (+₹10)</string>
+    <string name="item_total">सामान का कुल मूल्य</string>
+    <string name="delivery_fee">डिलीवरी शुल्क</string>
+    <string name="checkout_items_total">चेकआउट (%1$d सामान) • ₹%2$d</string>
+    <string name="special_instructions_hint">विशेष निर्देश (उदा. अधिक तीखा)</string>
+    <string name="items_subtotal">सामान का कुल मूल्य (%1$d सामान)</string>
+    <string name="free">मुफ्त</string>
+    <string name="total_payable">कुल देय राशि</string>
+    <string name="grand_total">कुल योग: ₹%1$d</string>
+    <string name="place_order">ऑर्डर दें</string>
+    <string name="placing_order">ऑर्डर भेजा जा रहा है...</string>
+    <string name="order_placed_title">ऑर्डर सफलतापूर्वक दिया गया!</string>
+    <string name="order_placed_msg">आपका ऑर्डर #%1$s दुकानदार को भेज दिया गया है।</string>
+    <string name="order_failed_title">ऑर्डर विफल रहा</string>
+    <string name="order_failed_msg">ऑर्डर नहीं दिया जा सका। कृपया पुनः प्रयास करें।</string>
+    <string name="my_favourite_vendors">मेरे पसंदीदा दुकानदार</string>
+    <string name="no_favourites_title">कोई पसंदीदा दुकानदार नहीं है</string>
+    <string name="no_favourites_msg">दुकानों को खोजें और पसंदीदा बनाने के लिए दिल के निशान को दबाएं।</string>
+    <string name="explore_vendors">दुकानें देखें</string>
+    <string name="saved_to_favourites">पसंदीदा में सहेजा गया</string>
+    <string name="demo_vendor">डेमो वेंडर</string>
+    <string name="live_local_vendor">लाइव लोकल वेंडर</string>
+    <string name="my_orders">मेरे ऑर्डर</string>
+    <string name="demo_orders_notice">डेमो ऑर्डर — केवल नमूना डेटा</string>
+    <string name="no_orders_match">इस स्थिति में कोई ऑर्डर नहीं मिला।</string>
+    <string name="show_all_orders">सभी ऑर्डर देखें</string>
+    <string name="order_history">ऑर्डर इतिहास</string>
+    <string name="order_history_sub">अपने पिछले ऑर्डर देखें</string>
+    <string name="account_settings">खाता सेटिंग</string>
+    <string name="account_settings_sub">अपना नाम और फ़ोन नंबर बदलें</string>
+    <string name="logout">लॉगआउट</string>
+    <string name="save_changes">बदलाव सहेजें</string>
+    <string name="no_past_orders">कोई पुराना ऑर्डर नहीं है</string>
+    <string name="past_orders_empty_msg">आपके पूरे हुए ऑर्डर यहां दिखाई देंगे।</string>
+</resources>

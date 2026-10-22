@@ -15,7 +15,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.example.digitalstreetvendornetwork.R
 
 /**
  * Reusable container providing swipe-to-delete behavior using Material 3 [SwipeToDismissBox].
@@ -56,7 +58,7 @@ fun SwipeToDeleteContainer(
             ) {
                 Icon(
                     imageVector = icon,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.delete),
                     tint = Color.White,
                     modifier = Modifier.scale(scale)
                 )

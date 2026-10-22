@@ -1,3 +1,187 @@
 <resources>
     <string name="app_name">Digital Street Vendor Network</string>
+    <string name="app_title">Local Vends</string>
+    <string name="app_tagline">Your neighbourhood market, digitized.</string>
+    <string name="cd_app_logo">App Logo</string>
+    <string name="cd_close">Close</string>
+    <string name="cd_back">Back</string>
+    <string name="cd_logout">Logout</string>
+    <string name="delete">Delete</string>
+
+    <!-- Progress Tracker -->
+    <string name="step_placed">Placed</string>
+    <string name="step_preparing">Preparing</string>
+    <string name="step_completed">Completed</string>
+    <string name="step_declined">Declined</string>
+    <string name="cd_completed">Completed</string>
+    <string name="cd_declined">Declined</string>
+
+    <!-- Language & Dialogs -->
+    <string name="language">Language</string>
+    <string name="language_subtitle">English, हिंदी, मराठी</string>
+    <string name="select_language">Select Language</string>
+    <string name="lang_en">English</string>
+    <string name="lang_hi">हिंदी</string>
+    <string name="lang_mr">मराठी</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Auth / Login / Signup -->
+    <string name="phone_number">Phone Number</string>
+    <string name="password">Password</string>
+    <string name="secure_login">Secure Login</string>
+    <string name="create_new_account">Create a new account</string>
+    <string name="join_local_vends">Join Local Vends</string>
+    <string name="role_vendor">Vendor</string>
+    <string name="role_customer">Customer</string>
+    <string name="full_name">Full Name</string>
+    <string name="phone">Phone</string>
+    <string name="create_account">Create Account</string>
+    <string name="already_have_account">Already have an account? Login</string>
+
+    <!-- Auth Errors -->
+    <string name="error_empty_password">Password cannot be empty.</string>
+    <string name="error_empty_name">Name cannot be empty.</string>
+    <string name="error_invalid_phone_10_digit">Enter a valid 10-digit phone number.</string>
+    <string name="error_email_exists">This phone number is already registered. Please log in.</string>
+    <string name="error_invalid_phone">Invalid phone number format. Please check and try again.</string>
+    <string name="error_wrong_password">Incorrect password. Please try again.</string>
+    <string name="error_user_not_found">No account found for this phone number. Please sign up.</string>
+    <string name="error_weak_password">Password must be at least 6 characters.</string>
+    <string name="error_network">Network error. Please check your connection.</string>
+    <string name="error_auth_failed">Authentication failed. Please try again.</string>
+    <string name="error_unexpected">An unexpected error occurred. Please try again.</string>
+
+    <!-- Tabs -->
+    <string name="tab_catalogue">Catalogue</string>
+    <string name="tab_location">Location</string>
+    <string name="tab_orders">Orders</string>
+    <string name="tab_profile">Profile</string>
+    <string name="tab_discover">Discover</string>
+    <string name="tab_favourites">Favourites</string>
+    <string name="tab_my_orders">My Orders</string>
+
+    <!-- Statuses -->
+    <string name="status_pending">Pending</string>
+    <string name="status_preparing">Preparing</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_declined">Declined</string>
+
+    <!-- Vendor Screens -->
+    <string name="save">Save</string>
+    <string name="delete_confirm_title">Delete %1$s?</string>
+    <string name="delete_confirm_msg">Are you sure you want to remove this product from your catalogue?</string>
+    <string name="desc_label">Description</string>
+    <string name="price_label">Price (e.g. 50)</string>
+    <string name="my_stall">My Stall</string>
+    <string name="broadcast_location">Broadcast Location</string>
+    <string name="visible_to_customers">Visible to customers on map</string>
+    <string name="hidden_from_customers">Hidden from customer map</string>
+    <string name="todays_summary">Today\'s Summary</string>
+    <string name="total_revenue_today">Total Revenue Today</string>
+    <string name="orders_completed_today">Orders Completed Today</string>
+    <string name="coming_in_future_update">Coming in a future update</string>
+    <string name="accepting_orders">Accepting customer orders</string>
+    <string name="merchant_upi_id">Merchant UPI ID</string>
+    <string name="add_product">Add Product</string>
+    <string name="no_products_yet">No products added yet</string>
+    <string name="no_products_hint">Click the + button below to add your first menu item.</string>
+    <string name="delete_product">Delete Product</string>
+    <string name="add_new_product">Add New Product</string>
+    <string name="product_name_hint">Product Name (e.g. Vada Pav)</string>
+    <string name="price_hint">Price (₹)</string>
+    <string name="desc_hint">Description (e.g. Hot &amp; spicy with chutney)</string>
+    <string name="add_to_menu">Add to Menu</string>
+    <string name="live_location_broadcast">Live Location Broadcast</string>
+    <string name="broadcast_subtitle">Allow nearby customers to see your stall on their map.</string>
+    <string name="broadcast_live_badge">You are live on the customer map.</string>
+    <string name="broadcast_hidden_badge">Your stall is hidden from customers.</string>
+    <string name="location_coords">Location: %1$.4f, %2$.4f</string>
+    <string name="broadcast_hint">Broadcasting your GPS location helps street customers discover your stall.</string>
+    <string name="stall_open_hours">Open • %1$s</string>
+    <string name="currently_closed">Currently Closed</string>
+    <string name="earnings_and_reviews">Earnings &amp; Reviews</string>
+    <string name="earnings_and_reviews_sub">View daily revenue &amp; customer ratings</string>
+    <string name="business_settings">Business Settings</string>
+    <string name="business_settings_sub">Stall timings, UPI ID &amp; status</string>
+    <string name="close_shop_logout">Close Shop (Logout)</string>
+    <string name="today_revenue">Today\'s Revenue</string>
+    <string name="completed_orders_title">Completed Orders</string>
+    <string name="completed_orders_count">%1$d orders completed</string>
+    <string name="avg_rating">Average Rating</string>
+    <string name="based_on_reviews">Based on %1$d customer reviews</string>
+    <string name="customer_reviews">Customer Reviews</string>
+    <string name="stall_status">Stall Status</string>
+    <string name="stall_status_sub">Toggle stall open or closed for customers</string>
+    <string name="open_for_business">Open for Business</string>
+    <string name="closed">Closed</string>
+    <string name="stall_name">Stall Name</string>
+    <string name="operating_hours_hint">Operating Hours (e.g. 9 AM - 9 PM)</string>
+    <string name="upi_id_hint">UPI ID for Payments (e.g. vendor@upi)</string>
+    <string name="save_settings">Save Settings</string>
+    <string name="no_orders_yet">No orders yet</string>
+    <string name="no_orders_sub">New customer orders will appear here in real-time.</string>
+    <string name="order_number">Order #%1$s</string>
+    <string name="customer_id_label">Customer ID: %1$s…</string>
+    <string name="accept">Accept</string>
+    <string name="decline">Decline</string>
+    <string name="mark_complete">Mark Complete</string>
+
+    <!-- Customer Screens -->
+    <string name="discover_vendors">Discover Street Vendors</string>
+    <string name="discover_subtitle">Find nearby street food, fruits &amp; vegetables</string>
+    <string name="search_placeholder">Search vendors or food...</string>
+    <string name="filter_all">All</string>
+    <string name="category_street_food">Street Food</string>
+    <string name="category_vegetables">Vegetables</string>
+    <string name="category_fruits">Fruits</string>
+    <string name="category_chaat">Chaat</string>
+    <string name="meters_away">%1$dm away</string>
+    <string name="open_now">Open Now</string>
+    <string name="view_menu_order">View Menu &amp; Order</string>
+    <string name="no_vendors_found">No vendors found</string>
+    <string name="no_vendors_sub">Try searching for something else.</string>
+    <string name="vendor_details">Vendor Details</string>
+    <string name="categories_label">Categories: %1$s</string>
+    <string name="menu_items">Menu Items</string>
+    <string name="add_to_cart">Add to Cart</string>
+    <string name="item_added">Item added to cart</string>
+    <string name="your_cart">Your Cart</string>
+    <string name="order_summary">Order Summary</string>
+    <string name="delivery_option">Delivery Option</string>
+    <string name="stall_pickup_free">Stall Pickup (Free)</string>
+    <string name="nearby_delivery_fee">Nearby Delivery (+₹10)</string>
+    <string name="item_total">Item Total</string>
+    <string name="delivery_fee">Delivery Fee</string>
+    <string name="checkout_items_total">Checkout (%1$d items) • ₹%2$d</string>
+    <string name="special_instructions_hint">Special instructions (e.g. extra spicy)</string>
+    <string name="items_subtotal">Items Subtotal (%1$d items)</string>
+    <string name="free">FREE</string>
+    <string name="total_payable">Total Payable</string>
+    <string name="grand_total">Grand Total: ₹%1$d</string>
+    <string name="place_order">Place Order</string>
+    <string name="placing_order">Placing Order...</string>
+    <string name="order_placed_title">Order Placed Successfully!</string>
+    <string name="order_placed_msg">Your order #%1$s has been sent to the vendor.</string>
+    <string name="order_failed_title">Order Failed</string>
+    <string name="order_failed_msg">Could not place order. Please try again.</string>
+    <string name="my_favourite_vendors">My Favourite Vendors</string>
+    <string name="no_favourites_title">No favourite vendors yet</string>
+    <string name="no_favourites_msg">Explore local vendors and tap the heart icon to save them here.</string>
+    <string name="explore_vendors">Explore Vendors</string>
+    <string name="saved_to_favourites">Saved to Favourites</string>
+    <string name="demo_vendor">Demo Vendor</string>
+    <string name="live_local_vendor">Live Local Vendor</string>
+    <string name="my_orders">My Orders</string>
+    <string name="demo_orders_notice">Demo orders — sample data only</string>
+    <string name="no_orders_match">No orders match the selected status.</string>
+    <string name="show_all_orders">Show All Orders</string>
+    <string name="order_history">Order History</string>
+    <string name="order_history_sub">View your previous orders</string>
+    <string name="account_settings">Account Settings</string>
+    <string name="account_settings_sub">Update your name and phone number</string>
+    <string name="logout">Logout</string>
+    <string name="save_changes">Save Changes</string>
+    <string name="no_past_orders">No past orders</string>
+    <string name="past_orders_empty_msg">Your completed orders will appear here.</string>
 </resources>
