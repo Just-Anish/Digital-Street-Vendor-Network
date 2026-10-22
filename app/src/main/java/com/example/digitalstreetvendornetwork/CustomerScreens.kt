@@ -11,6 +11,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -32,7 +35,7 @@ import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.firebase.firestore.FirebaseFirestore
 
-// Data Model for Orders
+// Data Models
 data class CustomerOrder(val id: String, val vendorName: String, val items: String, val total: String, val date: String, val status: String)
 data class MenuItem(val name: String, val price: String)
 
@@ -73,7 +76,6 @@ fun getVendorMenu(category: String): List<VendorMenuItem> {
     }
 }
 
-// CHANGED: id is now a String so it aligns with Firebase UIDs
 data class DiscoverableVendor(
     val id: String,
     val name: String,
@@ -180,8 +182,11 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
     val visibleVendors = searchedVendors.filter { vendor -> selectedFilter == "All" || vendor.category == selectedFilter }
 
     var selectedVendor by remember { mutableStateOf<DiscoverableVendor?>(null) }
+
+    // Cart & Checkout States
     var activeOrderingVendor by remember { mutableStateOf<DiscoverableVendor?>(null) }
     val cartQuantities = remember { mutableStateMapOf<String, Int>() }
+    var isCheckoutStep by remember { mutableStateOf(false) } // Toggles between Menu and Checkout views
     var deliveryOption by remember { mutableStateOf("Pickup") }
     var specialInstructions by remember { mutableStateOf("") }
     var showOrderSuccess by remember { mutableStateOf(false) }
@@ -210,14 +215,13 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                     onClick = { selectedVendor = vendor; true }
                 )
             }
-            // FIRESTORE SYNC: Drawing and attaching live Firebase markers
             liveVendors.forEach { vendor ->
                 Marker(
                     state = MarkerState(position = LatLng(vendor.lat, vendor.lng)),
                     title = vendor.stallName, snippet = "Live • Open Now",
                     onClick = {
                         selectedVendor = DiscoverableVendor(
-                            id = vendor.vendorId, // Passes the actual Firebase document ID
+                            id = vendor.vendorId,
                             name = vendor.stallName, category = "Live Vendor",
                             products = emptyList(), location = LatLng(vendor.lat, vendor.lng),
                             description = "Live • Open Now"
@@ -228,6 +232,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
             }
         }
 
+        // Top Search Bar Overlay
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp).align(Alignment.TopCenter)) {
             OutlinedTextField(
                 value = searchQuery, onValueChange = { searchQuery = it }, placeholder = { Text("Search for vendors or items...") },
@@ -253,6 +258,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
             }
         }
 
+        // Vendor Details Preview Card (when tapping a pin)
         selectedVendor?.let { vendor ->
             Card(
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(16.dp),
@@ -278,6 +284,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                         onClick = {
                             activeOrderingVendor = vendor
                             cartQuantities.clear()
+                            isCheckoutStep = false // Start at the Menu view
                             deliveryOption = "Pickup"
                             specialInstructions = ""
                         },
@@ -286,16 +293,15 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                     ) {
                         Icon(imageVector = Icons.Filled.ShoppingBag, contentDescription = null, tint = Color.White)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text(text = "View Menu & Order", fontWeight = FontWeight.Bold, color = Color.White)
+                        Text(text = "View Menu", fontWeight = FontWeight.Bold, color = Color.White)
                     }
                 }
             }
         }
 
+        // Interactive 2-Step Bottom Sheet (Menu -> Checkout)
         if (activeOrderingVendor != null) {
             val vendor = activeOrderingVendor!!
-
-            // FIRESTORE FETCH: Grab real catalogue items for the tapped vendor
             var realMenu by remember { mutableStateOf<List<VendorMenuItem>>(emptyList()) }
             var isLoadingMenu by remember { mutableStateOf(true) }
 
@@ -326,75 +332,81 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
             val deliveryFee = if (deliveryOption == "Nearby") 10 else 0
             val totalPayable = subtotal + deliveryFee
 
+            // 1. Add this state variable right before the ModalBottomSheet
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+            // 2. Add the sheetState parameter to the sheet
             ModalBottomSheet(
-                onDismissRequest = { activeOrderingVendor = null; cartQuantities.clear() },
-                containerColor = Color.White, shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+                onDismissRequest = {
+                    activeOrderingVendor = null
+                    cartQuantities.clear()
+                    isCheckoutStep = false
+                },
+                sheetState = sheetState, // <-- This forces it to open fully
+                containerColor = Color.White,
+                shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
             ) {
-                // FIXED: Tall parent box with a flexible top (scrollable menu) and a rigid bottom (Sticky Footer Checkout)
+                // ... Keep your Column(modifier = Modifier.fillMaxHeight(0.9f)) exactly as it is below here
                 Column(modifier = Modifier.fillMaxHeight(0.9f)) {
 
-                    // Top Section: Header & Scrollable List
-                    Column(modifier = Modifier.weight(1f).padding(horizontal = 20.dp).verticalScroll(rememberScrollState())) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(text = vendor.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 2.dp)) {
-                                    Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surfaceVariant) {
-                                        Text(text = vendor.category, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
-                                    }
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = "• ${vendor.description}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    if (!isCheckoutStep) {
+                        // ─── STEP 1: MENU VIEW ──────────────────────────────────────
+                        Column(modifier = Modifier.weight(1f).padding(horizontal = 20.dp).verticalScroll(rememberScrollState())) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(text = vendor.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                                    Text(text = vendor.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                                 }
+                                IconButton(onClick = { activeOrderingVendor = null; cartQuantities.clear() }) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.Gray) }
                             }
-                            IconButton(onClick = { activeOrderingVendor = null; cartQuantities.clear() }) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.Gray) }
-                        }
-                        Spacer(modifier = Modifier.height(14.dp))
-                        HorizontalDivider(color = Color(0xFFF0F0F0))
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = "Select Items", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(8.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
+                            HorizontalDivider(color = Color(0xFFF0F0F0))
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = "Select Items", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
 
-                        if (isLoadingMenu) {
-                            Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-                        } else if (realMenu.isEmpty()) {
-                            Text("No items available in this catalogue right now.", modifier = Modifier.padding(vertical = 16.dp), color = Color.Gray)
-                        } else {
-                            realMenu.forEach { item ->
-                                val quantity = cartQuantities[item.name] ?: 0
-                                Card(
-                                    modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), shape = RoundedCornerShape(14.dp),
-                                    colors = CardDefaults.cardColors(containerColor = if (quantity > 0) Color(0xFFFFF8E1).copy(alpha = 0.5f) else Color(0xFFFAFAFA)),
-                                    elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
-                                ) {
-                                    Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                                Box(modifier = Modifier.size(14.dp).border(1.2.dp, Color(0xFF2E7D32), RoundedCornerShape(3.dp)), contentAlignment = Alignment.Center) {
-                                                    Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF2E7D32)))
+                            if (isLoadingMenu) {
+                                Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                            } else if (realMenu.isEmpty()) {
+                                Text("No items available right now.", modifier = Modifier.padding(vertical = 16.dp), color = Color.Gray)
+                            } else {
+                                realMenu.forEach { item ->
+                                    val quantity = cartQuantities[item.name] ?: 0
+                                    Card(
+                                        modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), shape = RoundedCornerShape(14.dp),
+                                        colors = CardDefaults.cardColors(containerColor = if (quantity > 0) Color(0xFFFFF8E1).copy(alpha = 0.5f) else Color(0xFFFAFAFA)),
+                                        elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
+                                    ) {
+                                        Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                                    Box(modifier = Modifier.size(14.dp).border(1.2.dp, Color(0xFF2E7D32), RoundedCornerShape(3.dp)), contentAlignment = Alignment.Center) {
+                                                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF2E7D32)))
+                                                    }
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(text = item.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
                                                 }
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(text = item.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                                Spacer(modifier = Modifier.height(3.dp))
+                                                Text(text = item.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
+                                                Spacer(modifier = Modifier.height(6.dp))
+                                                Text(text = "₹${item.price}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                                             }
-                                            Spacer(modifier = Modifier.height(3.dp))
-                                            Text(text = item.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
-                                            Spacer(modifier = Modifier.height(6.dp))
-                                            Text(text = "₹${item.price}", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
-                                        }
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        if (quantity == 0) {
-                                            OutlinedButton(
-                                                onClick = { cartQuantities[item.name] = 1 }, shape = RoundedCornerShape(12.dp),
-                                                contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
-                                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
-                                            ) { Text("ADD +", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium) }
-                                        } else {
-                                            Row(modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 4.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
-                                                IconButton(onClick = { if (quantity <= 1) cartQuantities.remove(item.name) else cartQuantities[item.name] = quantity - 1 }, modifier = Modifier.size(28.dp)) {
-                                                    Icon(imageVector = Icons.Filled.Remove, contentDescription = "Decrease", tint = Color.White, modifier = Modifier.size(16.dp))
-                                                }
-                                                Text(text = "$quantity", fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.bodyMedium)
-                                                IconButton(onClick = { cartQuantities[item.name] = quantity + 1 }, modifier = Modifier.size(28.dp)) {
-                                                    Icon(imageVector = Icons.Filled.Add, contentDescription = "Increase", tint = Color.White, modifier = Modifier.size(16.dp))
+                                            Spacer(modifier = Modifier.width(12.dp))
+                                            if (quantity == 0) {
+                                                OutlinedButton(
+                                                    onClick = { cartQuantities[item.name] = 1 }, shape = RoundedCornerShape(12.dp),
+                                                    contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp),
+                                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary)
+                                                ) { Text("ADD +", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium) }
+                                            } else {
+                                                Row(modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(MaterialTheme.colorScheme.primary).padding(horizontal = 4.dp, vertical = 2.dp), verticalAlignment = Alignment.CenterVertically) {
+                                                    IconButton(onClick = { if (quantity <= 1) cartQuantities.remove(item.name) else cartQuantities[item.name] = quantity - 1 }, modifier = Modifier.size(28.dp)) {
+                                                        Icon(imageVector = Icons.Filled.Remove, contentDescription = "Decrease", tint = Color.White, modifier = Modifier.size(16.dp))
+                                                    }
+                                                    Text(text = "$quantity", fontWeight = FontWeight.Bold, color = Color.White, modifier = Modifier.padding(horizontal = 8.dp), style = MaterialTheme.typography.bodyMedium)
+                                                    IconButton(onClick = { cartQuantities[item.name] = quantity + 1 }, modifier = Modifier.size(28.dp)) {
+                                                        Icon(imageVector = Icons.Filled.Add, contentDescription = "Increase", tint = Color.White, modifier = Modifier.size(16.dp))
+                                                    }
                                                 }
                                             }
                                         }
@@ -402,23 +414,72 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                 }
                             }
                         }
-                    }
 
-                    // Bottom Section: Sticky Footer Checkout
-                    if (totalItems > 0) {
-                        Surface(
-                            modifier = Modifier.fillMaxWidth(),
-                            shadowElevation = 16.dp,
-                            color = Color.White
-                        ) {
+                        // Menu Footer: The "Go To Checkout" Button
+                        if (totalItems > 0) {
+                            Surface(modifier = Modifier.fillMaxWidth(), shadowElevation = 16.dp, color = Color.White) {
+                                Column(modifier = Modifier.padding(20.dp)) {
+                                    Button(
+                                        onClick = { isCheckoutStep = true }, // MOVES TO CHECKOUT VIEW
+                                        modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                                    ) {
+                                        Text(text = "Checkout ($totalItems items) • ₹$subtotal", fontSize = MaterialTheme.typography.titleMedium.fontSize, fontWeight = FontWeight.Bold, color = Color.White)
+                                    }
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
+                            }
+                        }
+
+                    } else {
+                        // ─── STEP 2: CHECKOUT VIEW ──────────────────────────────────────
+                        Column(modifier = Modifier.weight(1f).padding(horizontal = 20.dp).verticalScroll(rememberScrollState())) {
+                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                                IconButton(onClick = { isCheckoutStep = false }, modifier = Modifier.padding(end = 8.dp)) {
+                                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back to Menu", tint = MaterialTheme.colorScheme.primary)
+                                }
+                                Text(text = "Checkout", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                            }
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Text(text = "Delivery & Preferences", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                                FilterChip(selected = deliveryOption == "Pickup", onClick = { deliveryOption = "Pickup" }, label = { Text("Stall Pickup (Free)") }, shape = RoundedCornerShape(12.dp))
+                                FilterChip(selected = deliveryOption == "Nearby", onClick = { deliveryOption = "Nearby" }, label = { Text("Nearby Delivery (+₹10)") }, shape = RoundedCornerShape(12.dp))
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            OutlinedTextField(value = specialInstructions, onValueChange = { specialInstructions = it }, placeholder = { Text("Special instructions (e.g. extra spicy)") }, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), singleLine = true)
+
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(text = "Bill Summary", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFF9F9FB), modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(14.dp)) {
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Items Subtotal ($totalItems items)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                        Text("₹$subtotal", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                                    }
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                        Text("Delivery Fee", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                        Text(if (deliveryFee == 0) "FREE" else "₹10", style = MaterialTheme.typography.bodyMedium, color = if (deliveryFee == 0) Color(0xFF2E7D32) else Color.DarkGray)
+                                    }
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 0.8.dp)
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Total Payable", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                        Text("₹$totalPayable", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                                    }
+                                }
+                            }
+                        }
+
+                        // Checkout Footer: Final Place Order Button
+                        Surface(modifier = Modifier.fillMaxWidth(), shadowElevation = 16.dp, color = Color.White) {
                             Column(modifier = Modifier.padding(20.dp)) {
-                                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                                    FilterChip(selected = deliveryOption == "Pickup", onClick = { deliveryOption = "Pickup" }, label = { Text("Stall Pickup (Free)") }, shape = RoundedCornerShape(12.dp))
-                                    FilterChip(selected = deliveryOption == "Nearby", onClick = { deliveryOption = "Nearby" }, label = { Text("Nearby Delivery (+₹10)") }, shape = RoundedCornerShape(12.dp))
-                                }
-                                Spacer(modifier = Modifier.height(10.dp))
-                                OutlinedTextField(value = specialInstructions, onValueChange = { specialInstructions = it }, placeholder = { Text("Special instructions (e.g. extra spicy)") }, shape = RoundedCornerShape(12.dp), modifier = Modifier.fillMaxWidth(), singleLine = true)
-                                Spacer(modifier = Modifier.height(16.dp))
                                 Button(
                                     onClick = {
                                         val itemsSummary = cartQuantities.entries.joinToString(", ") { "${it.value}x ${it.key}" }
@@ -428,14 +489,15 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                         onPlaceOrder(newOrder)
                                         activeOrderingVendor = null
                                         cartQuantities.clear()
+                                        isCheckoutStep = false
                                     },
                                     modifier = Modifier.fillMaxWidth().height(52.dp), shape = RoundedCornerShape(14.dp), colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                                 ) {
                                     Icon(Icons.Filled.ShoppingBag, contentDescription = null, tint = Color.White)
                                     Spacer(modifier = Modifier.width(8.dp))
-                                    Text(text = "Place Order • ₹$totalPayable", fontSize = MaterialTheme.typography.titleMedium.fontSize, fontWeight = FontWeight.Bold, color = Color.White)
+                                    Text(text = "Place Order", fontSize = MaterialTheme.typography.titleMedium.fontSize, fontWeight = FontWeight.Bold, color = Color.White)
                                 }
-                                Spacer(modifier = Modifier.height(16.dp)) // padding for device bottom bar
+                                Spacer(modifier = Modifier.height(16.dp))
                             }
                         }
                     }
@@ -452,7 +514,6 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                 confirmButton = { Button(onClick = { showOrderSuccess = false }) { Text("Awesome") } }
             )
         }
-
         orderErrorMessage?.let { errMsg ->
             AlertDialog(
                 onDismissRequest = { orderErrorMessage = null },
@@ -490,7 +551,7 @@ fun CustomerProfileScreen(
                     onClick = onLogout, modifier = Modifier.fillMaxWidth().height(50.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error), shape = RoundedCornerShape(12.dp)
                 ) {
-                    Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Logout")
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Logout", fontSize = MaterialTheme.typography.titleMedium.fontSize)
                 }
@@ -519,7 +580,7 @@ fun ProfileOptionCard(icon: androidx.compose.ui.graphics.vector.ImageVector, tit
             Spacer(modifier = Modifier.width(16.dp))
             Text(title, style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.weight(1f))
-            Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
         }
     }
 }
@@ -532,7 +593,7 @@ fun CustomerOrderHistoryScreen(onBack: () -> Unit) {
     )
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
             Text("Order History", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
         LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -567,7 +628,7 @@ fun CustomerSettingsScreen(currentName: String, currentPhone: String, onSave: (S
     var tempPhone by remember { mutableStateOf(currentPhone) }
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
+            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
             Text("Account Settings", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
         }
         Card(

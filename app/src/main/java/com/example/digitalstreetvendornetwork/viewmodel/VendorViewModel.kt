@@ -215,7 +215,7 @@ class VendorViewModel : ViewModel() {
         if (vendorId == null) return
         db.collection("orders")
             .whereEqualTo("vendorId", vendorId)
-            .orderBy("timestamp", Query.Direction.DESCENDING)
+            // REMOVED: .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     Log.e("VendorViewModel", "listenToOrders error", error)
@@ -234,7 +234,9 @@ class VendorViewModel : ViewModel() {
                         timestamp   = doc.getLong("timestamp") ?: 0L
                     )
                 }
-                _activeOrders.value = orders
+
+                // ADDED: Sort the list locally in descending order before pushing it to the UI
+                _activeOrders.value = orders.sortedByDescending { it.timestamp }
                 recomputeEarnings(orders)
             }
     }
