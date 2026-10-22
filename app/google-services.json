@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "59038076569",
+    "project_id": "digital-street-vendor-network",
+    "storage_bucket": "digital-street-vendor-network.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:59038076569:android:040face700f942829f3208",
+        "android_client_info": {
+          "package_name": "com.example.digitalstreetvendornetwork"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD8Xn4UuhdUhjzq3O-02U5byM1-YR_y06o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
