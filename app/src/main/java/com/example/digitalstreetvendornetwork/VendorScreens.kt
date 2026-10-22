@@ -36,7 +36,9 @@ import com.example.digitalstreetvendornetwork.viewmodel.VendorViewModel
 import kotlinx.coroutines.launch
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.MapStyleOptions
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
@@ -326,7 +328,7 @@ fun VendorCatalogueScreen(
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                     Spacer(modifier = Modifier.height(4.dp))
-                                    Text(product.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
+                                    Text(product.description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2)
                                 }
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column(horizontalAlignment = Alignment.End) {
@@ -362,12 +364,20 @@ fun VendorLocationScreen(
         position = CameraPosition.fromLatLngZoom(LatLng(stallLat, stallLng), 15f)
     }
 
+    val isDarkTheme = LocalIsDarkTheme.current
+    val mapProperties = remember(isDarkTheme) {
+        MapProperties(
+            mapStyleOptions = if (isDarkTheme) MapStyleOptions(DARK_MAP_STYLE_JSON) else null
+        )
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         // Map fills the upper portion of the screen
         Box(modifier = Modifier.weight(1f)) {
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
+                properties = mapProperties,
                 onMapClick = { latLng ->
                     markerState.position = latLng
                     onLocationChange(latLng.latitude, latLng.longitude)
@@ -411,7 +421,7 @@ fun VendorLocationScreen(
                     Text(
                         text = if (isBroadcasting) stringResource(R.string.visible_to_customers) else stringResource(R.string.hidden_from_customers),
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (isBroadcasting) MaterialTheme.colorScheme.secondary else Color.Gray
+                        color = if (isBroadcasting) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline
                     )
                 }
                 Switch(
@@ -436,6 +446,7 @@ fun VendorProfileScreen(
 ) {
     var currentSubScreen by remember { mutableStateOf("MAIN") }
     var showLanguageDialog by remember { mutableStateOf(false) }
+    var showThemeDialog by remember { mutableStateOf(false) }
 
     when (currentSubScreen) {
         "MAIN" -> {
@@ -458,9 +469,9 @@ fun VendorProfileScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(stringResource(R.string.earnings_and_reviews), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(stringResource(R.string.earnings_and_reviews_sub), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text(stringResource(R.string.earnings_and_reviews_sub), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
                     }
                 }
                 Card(onClick = { currentSubScreen = "SETTINGS" }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), shape = RoundedCornerShape(12.dp)) {
@@ -469,9 +480,9 @@ fun VendorProfileScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(stringResource(R.string.business_settings), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(stringResource(R.string.business_settings_sub), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text(stringResource(R.string.business_settings_sub), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
                     }
                 }
                 // Help & Support card
@@ -481,9 +492,21 @@ fun VendorProfileScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(stringResource(R.string.help_and_support), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(stringResource(R.string.help_and_support_sub), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text(stringResource(R.string.help_and_support_sub), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
+                    }
+                }
+                // Theme selection card
+                Card(onClick = { showThemeDialog = true }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), shape = RoundedCornerShape(12.dp)) {
+                    Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Palette, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.theme), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.theme_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
                     }
                 }
                 // Language selection card
@@ -493,9 +516,9 @@ fun VendorProfileScreen(
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
                             Text(stringResource(R.string.language), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text(stringResource(R.string.language_subtitle), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text(stringResource(R.string.language_subtitle), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
@@ -508,6 +531,9 @@ fun VendorProfileScreen(
             }
             if (showLanguageDialog) {
                 LanguageSelectionDialog(onDismiss = { showLanguageDialog = false })
+            }
+            if (showThemeDialog) {
+                ThemeSelectionDialog(onDismiss = { showThemeDialog = false })
             }
         }
         "EARNINGS" -> VendorEarningsAndReviewsScreen(
@@ -562,7 +588,7 @@ fun VendorEarningsAndReviewsScreen(
         Text(
             text = stringResource(R.string.todays_summary),
             style = MaterialTheme.typography.titleSmall,
-            color = Color.Gray,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
         )
 
@@ -624,7 +650,7 @@ fun VendorEarningsAndReviewsScreen(
                 .padding(bottom = 14.dp),
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
-                containerColor = EarningsCardTint   // light green tint
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
@@ -639,21 +665,21 @@ fun VendorEarningsAndReviewsScreen(
                     Text(
                         text = stringResource(R.string.orders_completed_today),
                         style = MaterialTheme.typography.labelLarge,
-                        color = EarningsLabelGreen.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "$completedOrderCount",
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.ExtraBold,
-                        color = StatusCompleted
+                        color = MaterialTheme.colorScheme.secondary
                     )
                 }
                 Box(
                     modifier = Modifier
                         .size(56.dp)
                         .background(
-                            StatusCompleted.copy(alpha = 0.12f),
+                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.12f),
                             CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -661,7 +687,7 @@ fun VendorEarningsAndReviewsScreen(
                     Icon(
                         Icons.Filled.CheckCircle,
                         contentDescription = null,
-                        tint = StatusCompleted,
+                        tint = MaterialTheme.colorScheme.secondary,
                         modifier = Modifier.size(30.dp)
                     )
                 }
@@ -688,13 +714,13 @@ fun VendorEarningsAndReviewsScreen(
                     Text(
                         text = stringResource(R.string.customer_reviews),
                         style = MaterialTheme.typography.labelLarge,
-                        color = Color.Gray
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = stringResource(R.string.coming_in_future_update),
                         style = MaterialTheme.typography.bodySmall,
-                        color = Color.LightGray
+                        color = MaterialTheme.colorScheme.outline
                     )
                 }
                 Icon(
@@ -730,7 +756,7 @@ fun VendorBusinessSettingsScreen(
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Column {
                         Text(stringResource(R.string.stall_status), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Text(if (isStallOpen) stringResource(R.string.accepting_orders) else stringResource(R.string.hidden_from_customers), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        Text(if (isStallOpen) stringResource(R.string.accepting_orders) else stringResource(R.string.hidden_from_customers), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Switch(checked = isStallOpen, onCheckedChange = onStallOpenChange)
                 }
@@ -801,13 +827,14 @@ fun VendorOrderCard(
     order: Order,
     onUpdateStatus: (orderId: String, newStatus: String) -> Unit
 ) {
+    val isDark = LocalIsDarkTheme.current
     // Derive status badge colours
     val (statusColor, statusLabel) = when (order.status.uppercase()) {
-        "PENDING"   -> Pair(StatusPending, stringResource(R.string.status_pending))
-        "PREPARING" -> Pair(StatusPreparing, stringResource(R.string.status_preparing))
-        "COMPLETED" -> Pair(StatusCompleted, stringResource(R.string.status_completed))
-        "DECLINED"  -> Pair(StatusDeclined, stringResource(R.string.status_declined))
-        else        -> Pair(Color.Gray, order.status)
+        "PENDING"   -> Pair(getAdaptiveStatusColor("PENDING"), stringResource(R.string.status_pending))
+        "PREPARING" -> Pair(getAdaptiveStatusColor("PREPARING"), stringResource(R.string.status_preparing))
+        "COMPLETED" -> Pair(getAdaptiveStatusColor("COMPLETED"), stringResource(R.string.status_completed))
+        "DECLINED"  -> Pair(getAdaptiveStatusColor("DECLINED"), stringResource(R.string.status_declined))
+        else        -> Pair(MaterialTheme.colorScheme.onSurfaceVariant, order.status)
     }
 
     Card(
@@ -831,7 +858,7 @@ fun VendorOrderCard(
                 )
                 Surface(
                     shape = RoundedCornerShape(20.dp),
-                    color = statusColor.copy(alpha = 0.15f)
+                    color = statusColor.copy(alpha = if (isDark) 0.22f else 0.15f)
                 ) {
                     Text(
                         text = statusLabel,
@@ -851,7 +878,7 @@ fun VendorOrderCard(
             Text(
                 text = stringResource(R.string.customer_id_label, order.customerId.take(12)),
                 style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -911,7 +938,8 @@ fun VendorOrderCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = StatusCompleted
+                            containerColor = getAdaptiveStatusColor("COMPLETED"),
+                            contentColor = if (isDark) Color(0xFF00330E) else Color.White
                         )
                     ) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))

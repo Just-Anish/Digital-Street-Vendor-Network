@@ -77,13 +77,13 @@ fun SplashScreen() {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.padding(horizontal = 24.dp)
         ) {
-            // Centered storefront icon inside a white circle
+            // Centered storefront icon inside a circular badge
             Box(
                 modifier = Modifier
                     .size(116.dp)
                     .scale(logoScale.value)
                     .clip(CircleShape)
-                    .background(Color.White),
+                    .background(MaterialTheme.colorScheme.onPrimary),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
@@ -107,7 +107,7 @@ fun SplashScreen() {
                     text = stringResource(R.string.app_title),
                     style = MaterialTheme.typography.headlineLarge,
                     fontWeight = FontWeight.Bold,
-                    color = Color.White
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -115,7 +115,7 @@ fun SplashScreen() {
                 Text(
                     text = stringResource(R.string.app_tagline),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = Color.White.copy(alpha = 0.9f)
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.9f)
                 )
             }
         }

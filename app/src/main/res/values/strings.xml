@@ -246,4 +246,12 @@
     <string name="faq_vendor_a_stall_status">Navigate to Profile &gt; Business Settings and toggle the Stall Status switch. Closing your stall hides your menu and live status from customers until you reopen.</string>
     <string name="faq_vendor_q_upi">How do I update my merchant UPI ID for customer payments?</string>
     <string name="faq_vendor_a_upi">Go to Profile &gt; Business Settings, enter your VPA / UPI ID (e.g., yourname@upi) in the Merchant UPI field, and tap Save Changes so customers can pay directly to your account.</string>
+
+    <!-- Theme Settings -->
+    <string name="theme">Theme</string>
+    <string name="theme_subtitle">System default, Light, Dark</string>
+    <string name="select_theme">Choose Theme</string>
+    <string name="theme_system">System default</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
 </resources>

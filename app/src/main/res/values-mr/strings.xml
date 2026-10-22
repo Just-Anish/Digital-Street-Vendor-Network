@@ -246,4 +246,12 @@
     <string name="faq_vendor_a_stall_status">प्रोफाइल &gt; व्यवसाय सेटिंग्जमध्ये जाऊन \'दुकान स्थिती\' स्विच बदला. दुकान बंद केल्यास ग्राहकांना दुकान बंद दिसेल.</string>
     <string name="faq_vendor_q_upi">मर्चंट UPI ID कसा बदलावा?</string>
     <string name="faq_vendor_a_upi">प्रोफाइल &gt; व्यवसाय सेटिंग्जमध्ये मर्चंट UPI ID टाका आणि \'बदल जतन करा\' दाबा जेणेकरून ग्राहक थेट तुमच्या खात्यावर पैसे पाठवू शकतील.</string>
+
+    <!-- Theme Settings -->
+    <string name="theme">थीम</string>
+    <string name="theme_subtitle">सिस्टम डीफॉल्ट, लाईट, डार्क</string>
+    <string name="select_theme">थीम निवडा</string>
+    <string name="theme_system">सिस्टम डीफॉल्ट</string>
+    <string name="theme_light">लाईट</string>
+    <string name="theme_dark">डार्क</string>
 </resources>

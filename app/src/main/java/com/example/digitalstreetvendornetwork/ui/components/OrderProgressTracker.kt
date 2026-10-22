@@ -271,7 +271,7 @@ private fun ProgressStepItem(
                         Icon(
                             imageVector = Icons.Filled.Check,
                             contentDescription = stringResource(R.string.cd_completed),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -279,7 +279,7 @@ private fun ProgressStepItem(
                         Icon(
                             imageVector = Icons.Filled.Close,
                             contentDescription = stringResource(R.string.cd_declined),
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onError,
                             modifier = Modifier.size(14.dp)
                         )
                     }
@@ -287,7 +287,7 @@ private fun ProgressStepItem(
                         Box(
                             modifier = Modifier
                                 .size(7.dp)
-                                .background(Color.White, CircleShape)
+                                .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
                         )
                     }
                     StepState.FUTURE -> Unit

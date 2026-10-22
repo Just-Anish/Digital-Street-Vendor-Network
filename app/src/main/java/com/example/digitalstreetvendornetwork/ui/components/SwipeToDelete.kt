@@ -59,7 +59,7 @@ fun SwipeToDeleteContainer(
                 Icon(
                     imageVector = icon,
                     contentDescription = stringResource(R.string.delete),
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onError,
                     modifier = Modifier.scale(scale)
                 )
             }

@@ -9,6 +9,7 @@ import androidx.annotation.StringRes
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,8 +42,25 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            DigitalStreetVendorNetworkTheme(darkTheme = false) {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            val context = LocalContext.current
+            var currentThemeMode by remember { mutableStateOf(ThemeHelper.getThemeMode(context)) }
+            val systemInDark = isSystemInDarkTheme()
+            val isDark = when (currentThemeMode) {
+                AppThemeMode.SYSTEM -> systemInDark
+                AppThemeMode.LIGHT -> false
+                AppThemeMode.DARK -> true
+            }
+
+            CompositionLocalProvider(
+                LocalThemeMode provides currentThemeMode,
+                LocalOnThemeModeChange provides { newMode ->
+                    currentThemeMode = newMode
+                    ThemeHelper.setThemeMode(context, newMode)
+                },
+                LocalIsDarkTheme provides isDark
+            ) {
+                DigitalStreetVendorNetworkTheme(darkTheme = isDark) {
+                    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     var currentScreen by remember { mutableStateOf("SPLASH") }
                     var loggedInRole by remember { mutableStateOf("") }
 
@@ -115,6 +133,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
+}
 
 // ── Login Screen ──────────────────────────────────────────────────────────────
 
@@ -185,7 +204,7 @@ fun LoginScreen(
         ) {
             Text(
                 text = "English",
-                color = if (currentLang == "en") MaterialTheme.colorScheme.primary else Color.Gray,
+                color = if (currentLang == "en") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (currentLang == "en") FontWeight.Bold else FontWeight.Normal,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
@@ -197,10 +216,10 @@ fun LoginScreen(
                     }
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             )
-            Text(" | ", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+            Text(" | ", color = MaterialTheme.colorScheme.outlineVariant, style = MaterialTheme.typography.bodyMedium)
             Text(
                 text = "हिंदी",
-                color = if (currentLang == "hi") MaterialTheme.colorScheme.primary else Color.Gray,
+                color = if (currentLang == "hi") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (currentLang == "hi") FontWeight.Bold else FontWeight.Normal,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
@@ -212,10 +231,10 @@ fun LoginScreen(
                     }
                     .padding(horizontal = 6.dp, vertical = 4.dp)
             )
-            Text(" | ", color = Color.Gray, style = MaterialTheme.typography.bodyMedium)
+            Text(" | ", color = MaterialTheme.colorScheme.outlineVariant, style = MaterialTheme.typography.bodyMedium)
             Text(
                 text = "मराठी",
-                color = if (currentLang == "mr") MaterialTheme.colorScheme.primary else Color.Gray,
+                color = if (currentLang == "mr") MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = if (currentLang == "mr") FontWeight.Bold else FontWeight.Normal,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier
@@ -232,7 +251,7 @@ fun LoginScreen(
         Icon(Icons.Filled.Storefront, contentDescription = stringResource(R.string.cd_app_logo), modifier = Modifier.size(80.dp), tint = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
         Text(stringResource(R.string.app_title), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-        Text(stringResource(R.string.app_tagline), style = MaterialTheme.typography.bodyLarge, color = Color.Gray)
+        Text(stringResource(R.string.app_tagline), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(32.dp))
 
         Card(
