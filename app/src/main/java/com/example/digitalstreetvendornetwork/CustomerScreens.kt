@@ -649,6 +649,7 @@ fun CustomerProfileScreen(
                 Spacer(modifier = Modifier.height(32.dp))
                 ProfileOptionCard(icon = Icons.Filled.History, title = stringResource(R.string.order_history)) { currentSubScreen = "HISTORY" }
                 ProfileOptionCard(icon = Icons.Filled.Settings, title = stringResource(R.string.account_settings)) { currentSubScreen = "SETTINGS" }
+                ProfileOptionCard(icon = Icons.Filled.HelpOutline, title = stringResource(R.string.help_and_support)) { currentSubScreen = "HELP" }
                 ProfileOptionCard(icon = Icons.Filled.Language, title = stringResource(R.string.language)) { showLanguageDialog = true }
                 Spacer(modifier = Modifier.weight(1f))
                 Button(
@@ -676,6 +677,7 @@ fun CustomerProfileScreen(
             },
             onBack = { currentSubScreen = "MAIN" }
         )
+        "HELP" -> HelpSupportScreen(isVendor = false, onBack = { currentSubScreen = "MAIN" })
     }
 }
 

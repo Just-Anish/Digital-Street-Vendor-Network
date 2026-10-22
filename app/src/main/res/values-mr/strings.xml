@@ -205,4 +205,45 @@
     <string name="snackbar_removed_from_favourites">आवडत्यामधून काढले</string>
     <string name="snackbar_profile_updated">प्रोफाइल अपडेट केली</string>
     <string name="undo">पूर्ववत करा</string>
+
+    <!-- Help & Support -->
+    <string name="help_and_support">मदत आणि सहाय्य</string>
+    <string name="help_and_support_sub">वारंवार विचारले जाणारे प्रश्न आणि मदत संपर्क</string>
+    <string name="search_faqs_hint">प्रश्न आणि मदत शोधा…</string>
+    <string name="contact_support_title">थेट मदत हवी आहे का?</string>
+    <string name="contact_support_sub">आमची सपोर्ट टीम सकाळी ९ ते रात्री ८ पर्यंत उपलब्ध आहे</string>
+    <string name="email_support">ईमेल सपोर्ट</string>
+    <string name="call_support">कॉल सपोर्ट</string>
+    <string name="no_app_available">ही कृती करण्यासाठी कोणतेही ॲप उपलब्ध नाही</string>
+    <string name="frequently_asked_questions">वारंवार विचारले जाणारे प्रश्न</string>
+    <string name="no_faqs_found">कोणतेही प्रश्न सापडले नाहीत</string>
+    <string name="no_faqs_found_sub">कृपया इतर शब्दांनी शोधून पहा</string>
+
+    <!-- Customer FAQs -->
+    <string name="faq_customer_q_place_order">ऑर्डर कशी करावी?</string>
+    <string name="faq_customer_a_place_order">होम स्क्रीन किंवा नकाशावर जवळील विक्रेते पहा, वस्तू कार्टमध्ये जोडा आणि स्टॉल पिकअप किंवा डिलिव्हरी निवडून ऑर्डर करा.</string>
+    <string name="faq_customer_q_delivery">स्टॉल पिकअप आणि जवळील डिलिव्हरीमध्ये काय फरक आहे?</string>
+    <string name="faq_customer_a_delivery">स्टॉल पिकअपमध्ये तुम्ही विनामूल्य स्टॉलवरून वस्तू घेऊ शकता. जवळील डिलिव्हरीसाठी फक्त ₹१० सुविधा शुल्क आकारले जाते.</string>
+    <string name="faq_customer_q_payment">UPI आणि रोख पेमेंट कसे काम करते?</string>
+    <string name="faq_customer_a_payment">तुम्ही कोणत्याही UPI ॲपवरून विक्रेत्याचा QR कोड स्कॅन करून किंवा वस्तू घेताना रोख पैसे देऊन पेमेंट करू शकता.</string>
+    <string name="faq_customer_q_order_status">ऑर्डर स्थितीचा (Status) काय अर्थ आहे?</string>
+    <string name="faq_customer_a_order_status">Placed (PENDING): ऑर्डर मिळाली. Preparing (PREPARING): तयार केली जात आहे. Completed (COMPLETED): मिळण्यासाठी तयार आहे. Declined (DECLINED): विक्रेत्याने नाकारली.</string>
+    <string name="faq_customer_q_favourites">आवडते (Favourites) कसे काम करते?</string>
+    <string name="faq_customer_a_favourites">विक्रेता कार्डवरील हृदयाच्या चिन्हावर टॅप करून आवडत्यामध्ये जोडा. काढण्यासाठी कार्ड डावीकडे स्वाइप करा.</string>
+    <string name="faq_customer_q_language">ॲपची भाषा कशी बदलावी?</string>
+    <string name="faq_customer_a_language">प्रोफाइलमध्ये जाऊन \'भाषा\' निवडा. तुम्ही इंग्रजी, हिंदी किंवा मराठी यापैकी कोणतीही भाषा निवडू शकता.</string>
+
+    <!-- Vendor FAQs -->
+    <string name="faq_vendor_q_products">वस्तू कशी जोडावी आणि हटवावी?</string>
+    <string name="faq_vendor_a_products">कॅटलॉगमध्ये + बटण दाबून नवीन वस्तू जोडा. वस्तू हटवण्यासाठी ती डावीकडे स्वाइप करा किंवा डिलीट बटण दाबा.</string>
+    <string name="faq_vendor_q_location">स्टॉलचे थेट स्थान कसे दाखवावे?</string>
+    <string name="faq_vendor_a_location">नकाशा स्क्रीनवर \'स्थान प्रसारित करा\' दाबा जेणेकरून ग्राहक तुम्हाला नकाशावर पाहू शकतील. दुकान बंद करताना ते थांबवा.</string>
+    <string name="faq_vendor_q_orders">आलेल्या ऑर्डर्स कशा हाताळाव्यात?</string>
+    <string name="faq_vendor_a_orders">ऑर्डर टॅबमध्ये नवीन ऑर्डर स्वीकारण्यासाठी \'स्वीकारा\' दाबा आणि ग्राहकाला दिल्यावर \'पूर्ण करा\' दाबा. वस्तू नसल्यास \'नाकारा\' दाबा.</string>
+    <string name="faq_vendor_q_earnings">आजच्या कमाईची गणना कशी केली जाते?</string>
+    <string name="faq_vendor_a_earnings">आज पूर्ण झालेल्या (COMPLETED) सर्व ऑर्डर्सची बेरीज करून आजची कमाई दाखवली जाते. पेंडिंग किंवा नाकारलेल्या ऑर्डर्स मोजल्या जात नाहीत.</string>
+    <string name="faq_vendor_q_stall_status">दुकान चालू किंवा बंद कसे करावे?</string>
+    <string name="faq_vendor_a_stall_status">प्रोफाइल &gt; व्यवसाय सेटिंग्जमध्ये जाऊन \'दुकान स्थिती\' स्विच बदला. दुकान बंद केल्यास ग्राहकांना दुकान बंद दिसेल.</string>
+    <string name="faq_vendor_q_upi">मर्चंट UPI ID कसा बदलावा?</string>
+    <string name="faq_vendor_a_upi">प्रोफाइल &gt; व्यवसाय सेटिंग्जमध्ये मर्चंट UPI ID टाका आणि \'बदल जतन करा\' दाबा जेणेकरून ग्राहक थेट तुमच्या खात्यावर पैसे पाठवू शकतील.</string>
 </resources>

@@ -474,6 +474,18 @@ fun VendorProfileScreen(
                         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
                     }
                 }
+                // Help & Support card
+                Card(onClick = { currentSubScreen = "HELP" }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), shape = RoundedCornerShape(12.dp)) {
+                    Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.HelpOutline, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(stringResource(R.string.help_and_support), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.help_and_support_sub), style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
+                    }
+                }
                 // Language selection card
                 Card(onClick = { showLanguageDialog = true }, modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), shape = RoundedCornerShape(12.dp)) {
                     Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -507,6 +519,7 @@ fun VendorProfileScreen(
         "SETTINGS" -> VendorBusinessSettingsScreen(
             stallName, onStallNameChange, isStallOpen, onStallOpenChange, operatingHours, onOperatingHoursChange, upiId, onUpiIdChange, onBack = { currentSubScreen = "MAIN" }
         )
+        "HELP" -> HelpSupportScreen(isVendor = true, onBack = { currentSubScreen = "MAIN" })
     }
 }
 

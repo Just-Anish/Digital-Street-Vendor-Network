@@ -205,4 +205,45 @@
     <string name="snackbar_removed_from_favourites">Removed from favourites</string>
     <string name="snackbar_profile_updated">Profile updated</string>
     <string name="undo">Undo</string>
+
+    <!-- Help & Support -->
+    <string name="help_and_support">Help &amp; Support</string>
+    <string name="help_and_support_sub">FAQs and contact support</string>
+    <string name="search_faqs_hint">Search help and FAQs…</string>
+    <string name="contact_support_title">Need Direct Assistance?</string>
+    <string name="contact_support_sub">Our support team is available from 9 AM to 8 PM</string>
+    <string name="email_support">Email Support</string>
+    <string name="call_support">Call Support</string>
+    <string name="no_app_available">No suitable application found to perform this action</string>
+    <string name="frequently_asked_questions">Frequently Asked Questions</string>
+    <string name="no_faqs_found">No FAQs Found</string>
+    <string name="no_faqs_found_sub">Try searching with different keywords</string>
+
+    <!-- Customer FAQs -->
+    <string name="faq_customer_q_place_order">How do I place an order?</string>
+    <string name="faq_customer_a_place_order">Browse nearby vendors on the Home screen or map, select a vendor to view their products, add desired items to your cart, and proceed to checkout with stall pickup or delivery.</string>
+    <string name="faq_customer_q_delivery">What is the difference between stall pickup and nearby delivery?</string>
+    <string name="faq_customer_a_delivery">Stall pickup allows you to collect your order directly at the vendor stall at no extra cost. Nearby delivery brings the order to your nearby doorstep for a nominal ₹10 convenience fee.</string>
+    <string name="faq_customer_q_payment">How do UPI and cash payments work?</string>
+    <string name="faq_customer_a_payment">You can pay instantly using any UPI app (Google Pay, PhonePe, Paytm) by scanning the vendor\'s QR code, or opt to pay in cash directly when picking up your order.</string>
+    <string name="faq_customer_q_order_status">What does each order status mean?</string>
+    <string name="faq_customer_a_order_status">Placed (PENDING): Vendor received your order. Preparing (PREPARING): Order is being freshly prepared. Completed (COMPLETED): Ready for pickup or handed over. Declined (DECLINED): Vendor was unable to accept the order.</string>
+    <string name="faq_customer_q_favourites">How do favourites work?</string>
+    <string name="faq_customer_a_favourites">Tap the heart icon on any vendor stall card to save them to your Favourites tab for quick access later. You can swipe left on any saved vendor to remove them anytime.</string>
+    <string name="faq_customer_q_language">How do I change the app language?</string>
+    <string name="faq_customer_a_language">Open your Profile tab and tap on Language. You can switch anytime between English, Hindi (हिंदी), and Marathi (मराठी) without restarting the app.</string>
+
+    <!-- Vendor FAQs -->
+    <string name="faq_vendor_q_products">How do I add or delete products from my catalogue?</string>
+    <string name="faq_vendor_a_products">Tap the + button on your Catalogue screen to add an item with name, price, and category. To delete a product, swipe it to the left or tap its delete button.</string>
+    <string name="faq_vendor_q_location">How do I broadcast my stall\'s live location?</string>
+    <string name="faq_vendor_a_location">From the Live Map screen, tap \'Broadcast Location\' so nearby customers can see your real-time stall pin on the map. You can stop broadcasting whenever you move or pack up.</string>
+    <string name="faq_vendor_q_orders">How do I manage incoming customer orders?</string>
+    <string name="faq_vendor_a_orders">In the Orders tab, new orders show up under Pending. Tap \'Accept\' to move them to Preparing, and \'Complete\' once handed over. Tap \'Decline\' if an item is out of stock.</string>
+    <string name="faq_vendor_q_earnings">How are today\'s earnings calculated?</string>
+    <string name="faq_vendor_a_earnings">Today\'s earnings sum up all orders marked as COMPLETED during today\'s date. Pending and declined orders are not counted in your revenue totals.</string>
+    <string name="faq_vendor_q_stall_status">How do I open or close my stall?</string>
+    <string name="faq_vendor_a_stall_status">Navigate to Profile &gt; Business Settings and toggle the Stall Status switch. Closing your stall hides your menu and live status from customers until you reopen.</string>
+    <string name="faq_vendor_q_upi">How do I update my merchant UPI ID for customer payments?</string>
+    <string name="faq_vendor_a_upi">Go to Profile &gt; Business Settings, enter your VPA / UPI ID (e.g., yourname@upi) in the Merchant UPI field, and tap Save Changes so customers can pay directly to your account.</string>
 </resources>

@@ -205,4 +205,45 @@
     <string name="snackbar_removed_from_favourites">पसंदीदा से हटाया गया</string>
     <string name="snackbar_profile_updated">प्रोफ़ाइल अपडेट की गई</string>
     <string name="undo">वापस लें</string>
+
+    <!-- Help & Support -->
+    <string name="help_and_support">मदद और सहायता</string>
+    <string name="help_and_support_sub">अक्सर पूछे जाने वाले प्रश्न और सहायता संपर्क</string>
+    <string name="search_faqs_hint">प्रश्न और सहायता खोजें…</string>
+    <string name="contact_support_title">सीधी सहायता चाहिए?</string>
+    <string name="contact_support_sub">हमारी सहायता टीम सुबह 9 बजे से रात 8 बजे तक उपलब्ध है</string>
+    <string name="email_support">ईमेल सहायता</string>
+    <string name="call_support">कॉल सहायता</string>
+    <string name="no_app_available">इस क्रिया को पूरा करने के लिए कोई ऐप उपलब्ध नहीं है</string>
+    <string name="frequently_asked_questions">अक्सर पूछे जाने वाले प्रश्न</string>
+    <string name="no_faqs_found">कोई प्रश्न नहीं मिला</string>
+    <string name="no_faqs_found_sub">कृपया अन्य शब्दों से खोज कर देखें</string>
+
+    <!-- Customer FAQs -->
+    <string name="faq_customer_q_place_order">ऑर्डर कैसे करें?</string>
+    <string name="faq_customer_a_place_order">होम स्क्रीन या मैप पर पास के वेंडर देखें, सामान कार्ट में जोड़ें और स्टॉल पिकअप या डिलीवरी चुनकर ऑर्डर दें।</string>
+    <string name="faq_customer_q_delivery">स्टॉल पिकअप और पास की डिलीवरी में क्या अंतर है?</string>
+    <string name="faq_customer_a_delivery">स्टॉल पिकअप में आप बिना किसी अतिरिक्त शुल्क के स्टॉल से सामान ले सकते हैं। पास की डिलीवरी के लिए केवल ₹10 की सुविधा फीस लगती है।</string>
+    <string name="faq_customer_q_payment">UPI और नकद भुगतान कैसे काम करता है?</string>
+    <string name="faq_customer_a_payment">आप किसी भी UPI ऐप (Google Pay, PhonePe, Paytm) से वेंडर का QR कोड स्कैन करके या सामान लेते समय नकद में भुगतान कर सकते हैं।</string>
+    <string name="faq_customer_q_order_status">ऑर्डर स्थिति (Status) का क्या मतलब है?</string>
+    <string name="faq_customer_a_order_status">Placed (PENDING): ऑर्डर मिल गया। Preparing (PREPARING): तैयार किया जा रहा है। Completed (COMPLETED): पिकअप के लिए तैयार है। Declined (DECLINED): वेंडर द्वारा अस्वीकार।</string>
+    <string name="faq_customer_q_favourites">पसंदीदा (Favourites) कैसे काम करता है?</string>
+    <string name="faq_customer_a_favourites">वेंडर कार्ड पर दिल के निशान को दबाकर पसंदीदा में जोड़ें। हटाने के लिए कार्ड को बाईं तरफ स्वाइप करें।</string>
+    <string name="faq_customer_q_language">ऐप की भाषा कैसे बदलें?</string>
+    <string name="faq_customer_a_language">प्रोफ़ाइल में जाकर \'भाषा\' चुनें। आप बिना ऐप बंद किए अंग्रेज़ी, हिंदी या मराठी चुन सकते हैं।</string>
+
+    <!-- Vendor FAQs -->
+    <string name="faq_vendor_q_products">सामान कैसे जोड़ें और हटाएं?</string>
+    <string name="faq_vendor_a_products">कैटलॉग में + बटन दबाकर नया सामान जोड़ें। सामान हटाने के लिए उसे बाईं ओर स्वाइप करें या डिलीट बटन दबाएं।</string>
+    <string name="faq_vendor_q_location">स्टॉल की लाइव लोकेशन कैसे दिखाएं?</string>
+    <string name="faq_vendor_a_location">मैप स्क्रीन पर \'लोकेशन ब्रॉडकास्ट करें\' दबाएं ताकि ग्राहक आपको मैप पर देख सकें। दुकान समेटते समय इसे बंद कर दें।</string>
+    <string name="faq_vendor_q_orders">आए हुए ऑर्डर कैसे संभालें?</string>
+    <string name="faq_vendor_a_orders">ऑर्डर टैब में नए ऑर्डर स्वीकार करने के लिए \'स्वीकार करें\' दबाएं और ग्राहक को देने पर \'पूरा करें\' दबाएं। सामान न होने पर \'अस्वीकार\' करें।</string>
+    <string name="faq_vendor_q_earnings">आज की कमाई का हिसाब कैसे होता है?</string>
+    <string name="faq_vendor_a_earnings">आज पूरे किए गए (COMPLETED) सभी ऑर्डर जोड़कर आज की कमाई दिखाई जाती है। पेंडिंग या रद्द ऑर्डर इसमें नहीं जोड़े जाते।</string>
+    <string name="faq_vendor_q_stall_status">दुकान चालू या बंद कैसे करें?</string>
+    <string name="faq_vendor_a_stall_status">प्रोफ़ाइल &gt; बिज़नेस सेटिंग्स में जाकर \'दुकान स्थिति\' स्विच बदलें। दुकान बंद करने पर ग्राहकों को आपकी दुकान बंद दिखेगी।</string>
+    <string name="faq_vendor_q_upi">मर्चेंट UPI ID कैसे बदलें?</string>
+    <string name="faq_vendor_a_upi">प्रोफ़ाइल &gt; बिज़नेस सेटिंग्स में मर्चेंट UPI ID दर्ज करें और \'बदलाव सहेजें\' दबाएं ताकि ग्राहक सीधे आपके खाते में भुगतान कर सकें।</string>
 </resources>
