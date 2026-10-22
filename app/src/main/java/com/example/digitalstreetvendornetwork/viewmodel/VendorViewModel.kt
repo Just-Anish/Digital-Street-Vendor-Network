@@ -10,6 +10,7 @@ import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.Calendar
 
 sealed class SaveResult {
     object Idle : SaveResult()
@@ -64,6 +65,23 @@ class VendorViewModel : ViewModel() {
      * Ordered by timestamp descending (newest first).
      */
     val activeOrders: StateFlow<List<Order>> = _activeOrders.asStateFlow()
+
+    // ── Earnings analytics (Batch 5A) ──────────────────────────────────────────
+
+    private val _todayEarnings = MutableStateFlow("₹0")
+    /**
+     * Formatted string (e.g. "₹240") representing the sum of [Order.totalAmount]
+     * for all COMPLETED orders whose [Order.timestamp] falls on today's calendar day.
+     * Recomputed automatically every time [activeOrders] changes via [listenToOrders].
+     */
+    val todayEarnings: StateFlow<String> = _todayEarnings.asStateFlow()
+
+    private val _completedOrderCount = MutableStateFlow(0)
+    /**
+     * Count of orders with status == "COMPLETED" placed today.
+     * Recomputed automatically every time [activeOrders] changes via [listenToOrders].
+     */
+    val completedOrderCount: StateFlow<Int> = _completedOrderCount.asStateFlow()
 
     init {
         if (vendorId != null) {
@@ -217,6 +235,7 @@ class VendorViewModel : ViewModel() {
                     )
                 }
                 _activeOrders.value = orders
+                recomputeEarnings(orders)
             }
     }
 
@@ -240,6 +259,54 @@ class VendorViewModel : ViewModel() {
             .addOnFailureListener { e ->
                 Log.e("VendorViewModel", "updateOrderStatus($orderId -> $newStatus) failed", e)
             }
+    }
+
+    // ── Earnings computation (Batch 5A) ───────────────────────────────────────
+
+    /**
+     * Recomputes [todayEarnings] and [completedOrderCount] from [orders].
+     *
+     * "Today" is defined as any timestamp whose calendar date (year/month/day)
+     * matches the device's current local date at the moment of computation.
+     *
+     * Amount parsing: [Order.totalAmount] is stored as a formatted string such as
+     * "₹65" or "₹130". The leading "₹" (and any other non-digit prefix) is stripped
+     * before converting to Int; malformed values default to 0.
+     *
+     * Called automatically by [listenToOrders] whenever the snapshot changes.
+     */
+    private fun recomputeEarnings(orders: List<Order>) {
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        val todayEnd = todayStart + 24L * 60 * 60 * 1000  // exclusive upper bound
+
+        val completedToday = orders.filter { order ->
+            order.status.equals("COMPLETED", ignoreCase = true) &&
+                order.timestamp in todayStart until todayEnd
+        }
+
+        val totalRupees = completedToday.sumOf { order ->
+            order.totalAmount
+                .filter { it.isDigit() }   // strip "₹" and any other non-digit chars
+                .toIntOrNull() ?: 0
+        }
+
+        _completedOrderCount.value = completedToday.size
+        _todayEarnings.value = "₹$totalRupees"
+    }
+
+    /**
+     * Public entry point to trigger an immediate earnings recalculation.
+     * The [listenToOrders] SnapshotListener calls [recomputeEarnings] automatically
+     * on every update, so calling this manually is only needed when navigating to
+     * the Earnings screen without a recent snapshot event.
+     */
+    fun calculateTodayEarnings() {
+        recomputeEarnings(_activeOrders.value)
     }
 }
 
