@@ -6,7 +6,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.StringRes
-import androidx.compose.animation.Crossfade
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectableGroup
@@ -24,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.digitalstreetvendornetwork.ui.theme.DigitalStreetVendorNetworkTheme
 import kotlinx.coroutines.async
@@ -127,9 +129,46 @@ fun LoginScreen(
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var phoneError by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var lastErrorMessage by remember { mutableStateOf("") }
+    var shakeTrigger by remember { mutableIntStateOf(0) }
+    val shakeOffset = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+
+    if (errorMessage != null) {
+        lastErrorMessage = errorMessage!!
+    }
+
+    LaunchedEffect(shakeTrigger) {
+        if (shakeTrigger > 0) {
+            shakeOffset.snapTo(0f)
+            shakeOffset.animateTo(
+                targetValue = 0f,
+                animationSpec = keyframes {
+                    durationMillis = 350
+                    0f at 0
+                    -12f at 70
+                    12f at 140
+                    -8f at 210
+                    8f at 280
+                    0f at 350
+                }
+            )
+        }
+    }
+
+    val phoneBorderColor by animateColorAsState(
+        targetValue = if (phoneError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+        animationSpec = tween(durationMillis = 300),
+        label = "loginPhoneBorderColor"
+    )
+    val passwordBorderColor by animateColorAsState(
+        targetValue = if (passwordError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+        animationSpec = tween(durationMillis = 300),
+        label = "loginPasswordBorderColor"
+    )
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -197,7 +236,9 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(32.dp))
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(x = shakeOffset.value.dp.roundToPx(), y = 0) },
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -205,11 +246,33 @@ fun LoginScreen(
             Column(modifier = Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it; phoneError = false; errorMessage = null },
+                    onValueChange = {
+                        phone = it
+                        phoneError = false
+                        errorMessage = null
+                    },
                     label = { Text(stringResource(R.string.phone_number)) },
                     leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = null) },
                     singleLine = true,
                     isError = phoneError,
+                    supportingText = {
+                        AnimatedVisibility(
+                            visible = phoneError,
+                            enter = fadeIn() + expandVertically() + slideInVertically { -it / 2 },
+                            exit = fadeOut() + shrinkVertically() + slideOutVertically { -it / 2 }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.error_invalid_phone_10_digit),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = phoneBorderColor,
+                        focusedBorderColor = if (phoneError) phoneBorderColor else MaterialTheme.colorScheme.primary,
+                        errorBorderColor = phoneBorderColor
+                    ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -217,22 +280,38 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it; errorMessage = null },
+                    onValueChange = {
+                        password = it
+                        passwordError = false
+                        errorMessage = null
+                    },
                     label = { Text(stringResource(R.string.password)) },
                     leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = null) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
+                    isError = passwordError,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = passwordBorderColor,
+                        focusedBorderColor = if (passwordError) passwordBorderColor else MaterialTheme.colorScheme.primary,
+                        errorBorderColor = passwordBorderColor
+                    ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                if (errorMessage != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                AnimatedVisibility(
+                    visible = errorMessage != null,
+                    enter = fadeIn() + expandVertically() + slideInVertically { -it / 2 },
+                    exit = fadeOut() + shrinkVertically() + slideOutVertically { -it / 2 }
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = lastErrorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -240,20 +319,33 @@ fun LoginScreen(
                     onClick = {
                         if (phone.length != 10 || !phone.all { it.isDigit() }) {
                             phoneError = true
+                            shakeTrigger++
                             return@Button
                         }
                         if (password.isBlank()) {
+                            passwordError = true
                             errorMessage = context.getString(R.string.error_empty_password)
+                            shakeTrigger++
                             return@Button
                         }
                         isLoading = true
                         errorMessage = null
+                        phoneError = false
+                        passwordError = false
                         scope.launch {
                             try {
                                 val role = authRepo.login(phone, password)
                                 onLoginSuccess(role)
                             } catch (e: Exception) {
+                                val err = e.message ?: ""
+                                if ("WRONG_PASSWORD" in err || "password" in err.lowercase()) {
+                                    passwordError = true
+                                }
+                                if ("USER_NOT_FOUND" in err || "INVALID_EMAIL" in err) {
+                                    phoneError = true
+                                }
                                 errorMessage = context.getString(friendlyAuthError(e))
+                                shakeTrigger++
                             } finally {
                                 isLoading = false
                             }
@@ -293,9 +385,53 @@ fun SignupScreen(
     var phone by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var selectedRole by remember { mutableStateOf("VENDOR") }
+    var nameError by remember { mutableStateOf(false) }
+    var phoneError by remember { mutableStateOf(false) }
+    var passwordError by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var lastErrorMessage by remember { mutableStateOf("") }
+    var shakeTrigger by remember { mutableIntStateOf(0) }
+    val shakeOffset = remember { Animatable(0f) }
     val scope = rememberCoroutineScope()
+
+    if (errorMessage != null) {
+        lastErrorMessage = errorMessage!!
+    }
+
+    LaunchedEffect(shakeTrigger) {
+        if (shakeTrigger > 0) {
+            shakeOffset.snapTo(0f)
+            shakeOffset.animateTo(
+                targetValue = 0f,
+                animationSpec = keyframes {
+                    durationMillis = 350
+                    0f at 0
+                    -12f at 70
+                    12f at 140
+                    -8f at 210
+                    8f at 280
+                    0f at 350
+                }
+            )
+        }
+    }
+
+    val nameBorderColor by animateColorAsState(
+        targetValue = if (nameError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+        animationSpec = tween(durationMillis = 300),
+        label = "signupNameBorderColor"
+    )
+    val phoneBorderColor by animateColorAsState(
+        targetValue = if (phoneError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+        animationSpec = tween(durationMillis = 300),
+        label = "signupPhoneBorderColor"
+    )
+    val passwordBorderColor by animateColorAsState(
+        targetValue = if (passwordError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline,
+        animationSpec = tween(durationMillis = 300),
+        label = "signupPasswordBorderColor"
+    )
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
@@ -305,7 +441,9 @@ fun SignupScreen(
         Text(stringResource(R.string.join_local_vends), style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(24.dp))
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .offset { IntOffset(x = shakeOffset.value.dp.roundToPx(), y = 0) },
             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
             shape = RoundedCornerShape(16.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
@@ -329,18 +467,51 @@ fun SignupScreen(
 
                 OutlinedTextField(
                     value = name,
-                    onValueChange = { name = it; errorMessage = null },
+                    onValueChange = {
+                        name = it
+                        nameError = false
+                        errorMessage = null
+                    },
                     label = { Text(stringResource(R.string.full_name)) },
                     singleLine = true,
+                    isError = nameError,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = nameBorderColor,
+                        focusedBorderColor = if (nameError) nameBorderColor else MaterialTheme.colorScheme.primary,
+                        errorBorderColor = nameBorderColor
+                    ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = phone,
-                    onValueChange = { phone = it; errorMessage = null },
+                    onValueChange = {
+                        phone = it
+                        phoneError = false
+                        errorMessage = null
+                    },
                     label = { Text(stringResource(R.string.phone)) },
                     singleLine = true,
+                    isError = phoneError,
+                    supportingText = {
+                        AnimatedVisibility(
+                            visible = phoneError,
+                            enter = fadeIn() + expandVertically() + slideInVertically { -it / 2 },
+                            exit = fadeOut() + shrinkVertically() + slideOutVertically { -it / 2 }
+                        ) {
+                            Text(
+                                text = stringResource(R.string.error_invalid_phone_10_digit),
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = phoneBorderColor,
+                        focusedBorderColor = if (phoneError) phoneBorderColor else MaterialTheme.colorScheme.primary,
+                        errorBorderColor = phoneBorderColor
+                    ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
@@ -348,37 +519,79 @@ fun SignupScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = password,
-                    onValueChange = { password = it; errorMessage = null },
+                    onValueChange = {
+                        password = it
+                        passwordError = false
+                        errorMessage = null
+                    },
                     label = { Text(stringResource(R.string.password)) },
                     singleLine = true,
                     visualTransformation = PasswordVisualTransformation(),
+                    isError = passwordError,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedBorderColor = passwordBorderColor,
+                        focusedBorderColor = if (passwordError) passwordBorderColor else MaterialTheme.colorScheme.primary,
+                        errorBorderColor = passwordBorderColor
+                    ),
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                if (errorMessage != null) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = errorMessage!!,
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
+                AnimatedVisibility(
+                    visible = errorMessage != null && !phoneError,
+                    enter = fadeIn() + expandVertically() + slideInVertically { -it / 2 },
+                    exit = fadeOut() + shrinkVertically() + slideOutVertically { -it / 2 }
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = lastErrorMessage,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(
                     onClick = {
-                        if (name.isBlank()) { errorMessage = context.getString(R.string.error_empty_name); return@Button }
-                        if (phone.length != 10 || !phone.all { it.isDigit() }) { errorMessage = context.getString(R.string.error_invalid_phone_10_digit); return@Button }
-                        if (password.isBlank()) { errorMessage = context.getString(R.string.error_empty_password); return@Button }
+                        if (name.isBlank()) {
+                            nameError = true
+                            errorMessage = context.getString(R.string.error_empty_name)
+                            shakeTrigger++
+                            return@Button
+                        }
+                        if (phone.length != 10 || !phone.all { it.isDigit() }) {
+                            phoneError = true
+                            errorMessage = context.getString(R.string.error_invalid_phone_10_digit)
+                            shakeTrigger++
+                            return@Button
+                        }
+                        if (password.isBlank()) {
+                            passwordError = true
+                            errorMessage = context.getString(R.string.error_empty_password)
+                            shakeTrigger++
+                            return@Button
+                        }
                         isLoading = true
                         errorMessage = null
+                        nameError = false
+                        phoneError = false
+                        passwordError = false
                         scope.launch {
                             try {
                                 val role = authRepo.signUp(name, phone, password, selectedRole)
                                 onSignupSuccess(role)
                             } catch (e: Exception) {
+                                val err = e.message ?: ""
+                                if ("EMAIL_EXISTS" in err || "already in use" in err) {
+                                    phoneError = true
+                                }
+                                if ("WEAK_PASSWORD" in err) {
+                                    passwordError = true
+                                }
                                 errorMessage = context.getString(friendlyAuthError(e))
+                                shakeTrigger++
                             } finally {
                                 isLoading = false
                             }
