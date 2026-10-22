@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.ui.theme.*
 import com.example.digitalstreetvendornetwork.viewmodel.ActiveVendor
 import com.example.digitalstreetvendornetwork.viewmodel.CustomerViewModel
 import com.example.digitalstreetvendornetwork.viewmodel.OrderPlacementResult
@@ -360,7 +361,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                 IconButton(onClick = { activeOrderingVendor = null; cartQuantities.clear() }) { Icon(Icons.Filled.Close, contentDescription = "Close", tint = Color.Gray) }
                             }
                             Spacer(modifier = Modifier.height(14.dp))
-                            HorizontalDivider(color = Color(0xFFF0F0F0))
+                            HorizontalDivider(color = MenuDivider)
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(text = "Select Items", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
@@ -374,14 +375,14 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                     val quantity = cartQuantities[item.name] ?: 0
                                     Card(
                                         modifier = Modifier.fillMaxWidth().padding(vertical = 5.dp), shape = RoundedCornerShape(14.dp),
-                                        colors = CardDefaults.cardColors(containerColor = if (quantity > 0) Color(0xFFFFF8E1).copy(alpha = 0.5f) else Color(0xFFFAFAFA)),
+                                        colors = CardDefaults.cardColors(containerColor = if (quantity > 0) CartItemHighlight.copy(alpha = 0.5f) else CartItemDefault),
                                         elevation = CardDefaults.cardElevation(defaultElevation = 0.5.dp)
                                     ) {
                                         Row(modifier = Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
                                             Column(modifier = Modifier.weight(1f)) {
                                                 Row(verticalAlignment = Alignment.CenterVertically) {
-                                                    Box(modifier = Modifier.size(14.dp).border(1.2.dp, Color(0xFF2E7D32), RoundedCornerShape(3.dp)), contentAlignment = Alignment.Center) {
-                                                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(Color(0xFF2E7D32)))
+                                                    Box(modifier = Modifier.size(14.dp).border(1.2.dp, VegIndicatorGreen, RoundedCornerShape(3.dp)), contentAlignment = Alignment.Center) {
+                                                        Box(modifier = Modifier.size(6.dp).clip(CircleShape).background(VegIndicatorGreen))
                                                     }
                                                     Spacer(modifier = Modifier.width(8.dp))
                                                     Text(text = item.name, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
@@ -455,7 +456,7 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                             Text(text = "Bill Summary", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                             Spacer(modifier = Modifier.height(8.dp))
 
-                            Surface(shape = RoundedCornerShape(14.dp), color = Color(0xFFF9F9FB), modifier = Modifier.fillMaxWidth()) {
+                            Surface(shape = RoundedCornerShape(14.dp), color = BillSummaryBackground, modifier = Modifier.fillMaxWidth()) {
                                 Column(modifier = Modifier.padding(14.dp)) {
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text("Items Subtotal ($totalItems items)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
@@ -464,10 +465,10 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                                     Spacer(modifier = Modifier.height(4.dp))
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                         Text("Delivery Fee", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                                        Text(if (deliveryFee == 0) "FREE" else "₹10", style = MaterialTheme.typography.bodyMedium, color = if (deliveryFee == 0) Color(0xFF2E7D32) else Color.DarkGray)
+                                        Text(if (deliveryFee == 0) "FREE" else "₹10", style = MaterialTheme.typography.bodyMedium, color = if (deliveryFee == 0) StatusCompleted else Color.DarkGray)
                                     }
                                     Spacer(modifier = Modifier.height(8.dp))
-                                    HorizontalDivider(color = Color(0xFFE0E0E0), thickness = 0.8.dp)
+                                    HorizontalDivider(color = BillDividerColor, thickness = 0.8.dp)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         Text("Total Payable", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
@@ -696,7 +697,7 @@ fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
         )
     }
     val displayOrders = if (orders.isNotEmpty()) orders else defaultOrders
-    val statusColors = mapOf("Completed" to Color(0xFF2E7D32), "Preparing" to Color(0xFFE65100), "Pending" to Color(0xFF757575))
+    val statusColors = mapOf("Completed" to StatusCompleted, "Preparing" to BrandOrange, "Pending" to StatusPendingNeutral)
     val orderFilters = listOf("All", "Pending", "Preparing", "Completed")
     var selectedOrderFilter by remember { mutableStateOf("All") }
     val filteredOrders = remember(displayOrders, selectedOrderFilter) {

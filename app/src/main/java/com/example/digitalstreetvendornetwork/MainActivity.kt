@@ -18,24 +18,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import com.example.digitalstreetvendornetwork.ui.theme.DigitalStreetVendorNetworkTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            MaterialTheme(
-                colorScheme = lightColorScheme(
-                    primary = Color(0xFFE65100),
-                    onPrimary = Color.White,
-                    primaryContainer = Color(0xFFFFECE0),
-                    onPrimaryContainer = Color(0xFF4E1600),
-                    secondary = Color(0xFF2E7D32),
-                    onSecondary = Color.White,
-                    surfaceVariant = Color(0xFFFFF3E0),
-                    error = Color(0xFFD32F2F)
-                )
-            ) {
+            DigitalStreetVendorNetworkTheme(darkTheme = false) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
                     var currentScreen by remember { mutableStateOf("LOGIN") }
                     var loggedInRole by remember { mutableStateOf("") }

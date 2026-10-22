@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.ui.theme.*
 import com.example.digitalstreetvendornetwork.viewmodel.Order
 import com.example.digitalstreetvendornetwork.viewmodel.VendorViewModel
 import com.google.android.gms.maps.model.CameraPosition
@@ -448,7 +449,7 @@ fun VendorEarningsAndReviewsScreen(
                 .padding(bottom = 14.dp),
             shape = RoundedCornerShape(18.dp),
             colors = CardDefaults.cardColors(
-                containerColor = Color(0xFFE8F5E9)   // light green tint
+                containerColor = EarningsCardTint   // light green tint
             ),
             elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
         ) {
@@ -463,21 +464,21 @@ fun VendorEarningsAndReviewsScreen(
                     Text(
                         text = "Orders Completed Today",
                         style = MaterialTheme.typography.labelLarge,
-                        color = Color(0xFF388E3C).copy(alpha = 0.8f)
+                        color = EarningsLabelGreen.copy(alpha = 0.8f)
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
                         text = "$completedOrderCount",
                         style = MaterialTheme.typography.displaySmall,
                         fontWeight = FontWeight.ExtraBold,
-                        color = Color(0xFF2E7D32)
+                        color = StatusCompleted
                     )
                 }
                 Box(
                     modifier = Modifier
                         .size(56.dp)
                         .background(
-                            Color(0xFF2E7D32).copy(alpha = 0.12f),
+                            StatusCompleted.copy(alpha = 0.12f),
                             CircleShape
                         ),
                     contentAlignment = Alignment.Center
@@ -485,7 +486,7 @@ fun VendorEarningsAndReviewsScreen(
                     Icon(
                         Icons.Filled.CheckCircle,
                         contentDescription = null,
-                        tint = Color(0xFF2E7D32),
+                        tint = StatusCompleted,
                         modifier = Modifier.size(30.dp)
                     )
                 }
@@ -524,7 +525,7 @@ fun VendorEarningsAndReviewsScreen(
                 Icon(
                     Icons.Filled.Star,
                     contentDescription = null,
-                    tint = Color(0xFFFFC107),
+                    tint = RatingStar,
                     modifier = Modifier.size(32.dp)
                 )
             }
@@ -641,10 +642,10 @@ fun VendorOrderCard(
 ) {
     // Derive status badge colours
     val (statusColor, statusLabel) = when (order.status.uppercase()) {
-        "PENDING"   -> Pair(Color(0xFFFFA000), "Pending")
-        "PREPARING" -> Pair(Color(0xFF1976D2), "Preparing")
-        "COMPLETED" -> Pair(Color(0xFF2E7D32), "Completed")
-        "DECLINED"  -> Pair(Color(0xFFD32F2F), "Declined")
+        "PENDING"   -> Pair(StatusPending, "Pending")
+        "PREPARING" -> Pair(StatusPreparing, "Preparing")
+        "COMPLETED" -> Pair(StatusCompleted, "Completed")
+        "DECLINED"  -> Pair(StatusDeclined, "Declined")
         else        -> Pair(Color.Gray, order.status)
     }
 
@@ -747,7 +748,7 @@ fun VendorOrderCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32)
+                            containerColor = StatusCompleted
                         )
                     ) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
