@@ -22,9 +22,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.ui.components.SwipeToDeleteContainer
 import com.example.digitalstreetvendornetwork.ui.theme.*
 import com.example.digitalstreetvendornetwork.viewmodel.Order
 import com.example.digitalstreetvendornetwork.viewmodel.VendorViewModel
+import kotlinx.coroutines.launch
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -126,6 +128,7 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VendorCatalogueScreen(
     productList: List<Product>,
@@ -136,6 +139,9 @@ fun VendorCatalogueScreen(
     var newName by remember { mutableStateOf("") }
     var newPrice by remember { mutableStateOf("") }
     var newDesc by remember { mutableStateOf("") }
+    var productToDelete by remember { mutableStateOf<Product?>(null) }
+    var pendingDismissState by remember { mutableStateOf<SwipeToDismissBoxState?>(null) }
+    val coroutineScope = rememberCoroutineScope()
 
     if (showDialog) {
         AlertDialog(
@@ -161,6 +167,46 @@ fun VendorCatalogueScreen(
         )
     }
 
+    if (productToDelete != null) {
+        val product = productToDelete!!
+        AlertDialog(
+            onDismissRequest = {
+                coroutineScope.launch {
+                    pendingDismissState?.reset()
+                    pendingDismissState = null
+                }
+                productToDelete = null
+            },
+            title = { Text("Delete ${product.name}?") },
+            text = { Text("Are you sure you want to remove this product from your catalogue?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDeleteProduct(product.id)
+                        productToDelete = null
+                        pendingDismissState = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        coroutineScope.launch {
+                            pendingDismissState?.reset()
+                            pendingDismissState = null
+                        }
+                        productToDelete = null
+                    }
+                ) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         floatingActionButton = {
             FloatingActionButton(onClick = { showDialog = true }, containerColor = MaterialTheme.colorScheme.primary) {
@@ -172,26 +218,40 @@ fun VendorCatalogueScreen(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
         ) {
-            items(productList) { product ->
-                Card(
-                    modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            items(productList, key = { it.id }) { product ->
+                val dismissState = rememberSwipeToDismissBoxState()
+
+                SwipeToDeleteContainer(
+                    onDelete = {
+                        pendingDismissState = dismissState
+                        productToDelete = product
+                    },
+                    state = dismissState,
+                    modifier = Modifier.animateItem()
                 ) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                            Icon(Icons.Filled.Fastfood, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                        }
-                        Spacer(modifier = Modifier.width(16.dp))
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(product.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column(horizontalAlignment = Alignment.End) {
-                            Text(product.price, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
-                            IconButton(onClick = { onDeleteProduct(product.id) }) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Delete Product", tint = MaterialTheme.colorScheme.error)
+                    Card(
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    ) {
+                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                                Icon(Icons.Filled.Fastfood, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(product.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(horizontalAlignment = Alignment.End) {
+                                Text(product.price, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                                IconButton(onClick = {
+                                    pendingDismissState = null
+                                    productToDelete = product
+                                }) {
+                                    Icon(Icons.Filled.Delete, contentDescription = "Delete Product", tint = MaterialTheme.colorScheme.error)
+                                }
                             }
                         }
                     }
