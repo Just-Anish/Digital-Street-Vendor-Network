@@ -14,11 +14,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 
 /**
  * Reusable container providing swipe-to-delete behavior using Material 3 [SwipeToDismissBox].
- * Only allows end-to-start swipe, revealing a rounded red container with a scaled white delete icon.
+ * Only allows end-to-start swipe, revealing a rounded red container with a scaled white delete or custom icon.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -26,6 +27,7 @@ fun SwipeToDeleteContainer(
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
     state: SwipeToDismissBoxState = rememberSwipeToDismissBoxState(),
+    icon: ImageVector = Icons.Filled.Delete,
     content: @Composable () -> Unit
 ) {
     LaunchedEffect(state.currentValue) {
@@ -53,7 +55,7 @@ fun SwipeToDeleteContainer(
                 contentAlignment = Alignment.CenterEnd
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Delete,
+                    imageVector = icon,
                     contentDescription = "Delete",
                     tint = Color.White,
                     modifier = Modifier.scale(scale)

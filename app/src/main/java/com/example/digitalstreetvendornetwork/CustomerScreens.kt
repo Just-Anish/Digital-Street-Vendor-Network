@@ -24,6 +24,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.ui.components.SwipeToDeleteContainer
 import com.example.digitalstreetvendornetwork.ui.theme.*
 import com.example.digitalstreetvendornetwork.viewmodel.ActiveVendor
 import com.example.digitalstreetvendornetwork.viewmodel.CustomerViewModel
@@ -143,7 +144,8 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
                 )
                 1 -> CustomerFavouritesScreen(
                     favouriteVendorIds = favouriteVendorIds,
-                    onExploreClick = { selectedTab = 0 }
+                    onExploreClick = { selectedTab = 0 },
+                    onRemoveFavourite = { id -> favouriteVendorIds.remove(id) }
                 )
                 2 -> CustomerOrdersScreen(orders = customerOrders)
                 3 -> CustomerProfileScreen(
@@ -657,7 +659,11 @@ fun CustomerSettingsScreen(currentName: String, currentPhone: String, onSave: (S
 }
 
 @Composable
-fun CustomerFavouritesScreen(favouriteVendorIds: List<String>, onExploreClick: () -> Unit) {
+fun CustomerFavouritesScreen(
+    favouriteVendorIds: List<String>,
+    onExploreClick: () -> Unit,
+    onRemoveFavourite: (String) -> Unit
+) {
     Column(modifier = Modifier.fillMaxSize().padding(20.dp)) {
         Text(text = "My Favourite Vendors", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(20.dp))
@@ -670,15 +676,26 @@ fun CustomerFavouritesScreen(favouriteVendorIds: List<String>, onExploreClick: (
                 Button(onClick = onExploreClick) { Text("Explore Vendors") }
             }
         } else {
-            favouriteVendorIds.forEach { vendorId ->
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                    Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(imageVector = Icons.Filled.Favorite, contentDescription = null, tint = Color.Red)
-                        Spacer(modifier = Modifier.width(12.dp))
-                        val vendorName = if (vendorId.startsWith("dummy_")) "Demo Vendor" else "Live Local Vendor"
-                        Column {
-                            Text(text = vendorName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text(text = "Saved to Favourites", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(favouriteVendorIds, key = { it }) { vendorId ->
+                    SwipeToDeleteContainer(
+                        onDelete = { onRemoveFavourite(vendorId) },
+                        icon = Icons.Filled.HeartBroken,
+                        modifier = Modifier.animateItem()
+                    ) {
+                        Card(modifier = Modifier.fillMaxWidth()) {
+                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Icon(imageVector = Icons.Filled.Favorite, contentDescription = null, tint = Color.Red)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                val vendorName = if (vendorId.startsWith("dummy_")) "Demo Vendor" else "Live Local Vendor"
+                                Column {
+                                    Text(text = vendorName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(text = "Saved to Favourites", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                }
+                            }
                         }
                     }
                 }
