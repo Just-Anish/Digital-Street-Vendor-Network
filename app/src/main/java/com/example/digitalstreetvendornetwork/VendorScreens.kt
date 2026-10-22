@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.ui.components.OrderProgressTracker
 import com.example.digitalstreetvendornetwork.ui.components.SwipeToDeleteContainer
 import com.example.digitalstreetvendornetwork.ui.theme.*
 import com.example.digitalstreetvendornetwork.viewmodel.Order
@@ -742,6 +743,8 @@ fun VendorOrderCard(
                 }
             }
 
+            Spacer(modifier = Modifier.height(12.dp))
+            OrderProgressTracker(status = order.status)
             Spacer(modifier = Modifier.height(8.dp))
 
             // ── Customer info ────────────────────────────────────────────────
