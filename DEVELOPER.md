@@ -65,7 +65,7 @@
 
 ## 2. Architecture & Major Components
 
-The project uses a single-module (`:app`) structure with Jetpack Compose for declarative UI. There is currently no `ViewModel`, repository layer, dependency injection (Hilt/Koin), or database. All state resides in composable memory.
+The project uses a single-module (`:app`) structure with Jetpack Compose for declarative UI, incorporating `FirebaseAuthRepository` for authentication and `VendorViewModel` for Firestore synchronization. Dependency injection (Hilt/Koin) and local caching (Room) are not yet integrated.
 
 ```
 app/src/main/
@@ -76,6 +76,8 @@ app/src/main/
     ├── FirebaseAuthRepository.kt               # Firebase Auth + Firestore encapsulation (sign-up, login, logout, role fetch)
     ├── VendorScreens.kt                        # Vendor domain: data models, catalogue, map, orders, profile
     ├── CustomerScreens.kt                      # Customer domain: data models, discovery map, cart, orders, profile
+    ├── viewmodel/
+    │   └── VendorViewModel.kt                  # StateFlow-based ViewModel; owns /vendors/{vendorId} and /products subcollection Firestore reads/writes
     └── ui/theme/
         ├── Color.kt                            # Material 3 template color definitions
         ├── Theme.kt                            # DigitalStreetVendorNetworkTheme definition
@@ -86,11 +88,12 @@ app/src/main/
 
 | Component | File | Responsibilities |
 | :--- | :--- | :--- |
-| `MainActivity` | [MainActivity.kt](file:///Users/anish/Digital-Street-Vendor-Network/app/src/main/java/com/example/digitalstreetvendornetwork/MainActivity.kt) | Host activity, session restore on cold-start, top-level screen switching, `LoginScreen` and `SignupScreen` composables. |
+| `MainActivity` | [MainActivity.kt](file:///Users/anish/Digital-Street-Vendor-Network/app/src/main/java/com/example/digitalstreetvendornetwork/MainActivity.kt) | Host activity, session restore on cold-start, top-level screen switching, `LoginScreen` and `SignupScreen` composables. Passes Firebase `vendorId` (UID) to `VendorAppMainScreen`. |
 | `FirebaseAuthRepository` | [FirebaseAuthRepository.kt](file:///Users/anish/Digital-Street-Vendor-Network/app/src/main/java/com/example/digitalstreetvendornetwork/FirebaseAuthRepository.kt) | Wraps `FirebaseAuth` and `FirebaseFirestore`; exposes `signUp`, `login`, `logout`, `fetchRole` as suspend functions. Single instance created with `remember {}` in `MainActivity`. |
-| `VendorAppMainScreen` | [VendorScreens.kt](file:///Users/anish/Digital-Street-Vendor-Network/app/src/main/java/com/example/digitalstreetvendornetwork/VendorScreens.kt) | Vendor Scaffold, bottom navigation (Catalogue, Location, Orders, Profile), state hoisting for products, orders, earnings, settings, and coordinates. |
+| `VendorViewModel` | [viewmodel/VendorViewModel.kt](file:///Users/anish/Digital-Street-Vendor-Network/app/src/main/java/com/example/digitalstreetvendornetwork/viewmodel/VendorViewModel.kt) | Handles Cloud Firestore sync for the `/vendors/{vendorId}` document and its `/products` subcollection. Exposes `settings: StateFlow<VendorSettings>`, `saveResult: StateFlow<SaveResult>`, `catalogueProducts: StateFlow<List<ProductFirestore>>`, and `catalogueLoading: StateFlow<Boolean>`. Provides `addProduct()`, `toggleProductAvailability()`, and `deleteProduct()` backed by a real-time `SnapshotListener`. Instantiated via `VendorViewModel.Factory(vendorId)` in `VendorAppMainScreen`. |
+| `VendorAppMainScreen` | [VendorScreens.kt](file:///Users/anish/Digital-Street-Vendor-Network/app/src/main/java/com/example/digitalstreetvendornetwork/VendorScreens.kt) | Vendor Scaffold, bottom navigation, state hoisting for in-memory data (orders, earnings, location); delegates Business Settings state to `VendorViewModel`. Receives `vendorId: String` (Firebase UID) from `MainActivity`. |
 | `CustomerAppMainScreen` | [CustomerScreens.kt](file:///Users/anish/Digital-Street-Vendor-Network/app/src/main/java/com/example/digitalstreetvendornetwork/CustomerScreens.kt) | Customer Scaffold, bottom navigation (Discover, Favourites, My Orders, Profile), state hoisting for favorites, orders, customer profile, and cart. |
-| Data Models | `VendorScreens.kt`, `CustomerScreens.kt` | In-memory representations: `Product`, `VendorReview`, `VendorOrder`, `VendorOrderItem`, `VendorOrderStatus`, `CustomerOrder`, `DiscoverableVendor`, `VendorMenuItem`. |
+| Data Models | `VendorScreens.kt`, `CustomerScreens.kt`, `viewmodel/VendorViewModel.kt` | In-memory: `Product` (local, unused by Catalogue tab), `VendorReview`, `VendorOrder`, `VendorOrderItem`, `VendorOrderStatus`, `CustomerOrder`, `DiscoverableVendor`, `VendorMenuItem`. Firestore-serializable: `ProductFirestore` (id, name, price, description, isAvailable), `VendorSettings`, `SaveResult` — all defined in `viewmodel/VendorViewModel.kt`. |
 
 ---
 
@@ -103,11 +106,12 @@ app/src/main/
 - *Note:* The dependency `androidx.navigation:navigation-compose:2.7.7` is declared in `app/build.gradle.kts` but is not yet wired into the screen flow.
 
 ### State Management & Data Flow
-- **State Mechanism:** Pure Compose state using `remember { mutableStateOf(...) }`, `mutableStateListOf(...)`, and `mutableStateMapOf(...)`.
+- **State Mechanism:** Pure Compose state using `remember { mutableStateOf(...) }`, `mutableStateListOf(...)`, and `mutableStateMapOf(...)`, complemented by Kotlin `StateFlow` in ViewModels.
 - **Hoisting:**
-  - In `VendorAppMainScreen`, state for `productList`, `ordersList`, `todayEarnings`, `completedOrdersCount`, `currentVendorLocation`, and business settings are hoisted at the root scaffold and passed down via callbacks. Completing an order in `VendorOrdersScreen` directly modifies `ordersList` and increments `todayEarnings` and `completedOrdersCount`.
+  - In `VendorAppMainScreen`, state for `productList`, `ordersList`, `todayEarnings`, `completedOrdersCount`, and `currentVendorLocation` are hoisted at the root scaffold and passed down via callbacks. Completing an order in `VendorOrdersScreen` directly modifies `ordersList` and increments `todayEarnings` and `completedOrdersCount`.
   - In `CustomerAppMainScreen`, `favouriteVendorIds` and `customerOrders` are hoisted at the root scaffold. Placing an order in `CustomerDiscoverScreen` appends a new `CustomerOrder` directly into `customerOrders`.
-- **Persistence Boundary:** State is entirely transient in memory. Navigating between Vendor and Customer roles or killing the process resets all state to default seed data.
+- **Vendor Settings Hoisting & Firestore Sync:** Business Settings (Stall Name, Open Status, Operating Hours, UPI ID) are hoisted in `VendorViewModel` using Kotlin `StateFlow`. UI interactions in `VendorScreens.kt` (`VendorAppMainScreen` and `VendorBusinessSettingsScreen`) trigger Firestore updates via `VendorViewModel` instead of relying on local in-memory state.
+- **Persistence Boundary:** User profiles and Vendor Business Settings are persisted in Cloud Firestore. Remaining domain state (catalogue, orders, cart) remains transient in memory and resets on app restart.
 
 ### Theme & Styling
 - [MainActivity.kt](file:///Users/anish/Digital-Street-Vendor-Network/app/src/main/java/com/example/digitalstreetvendornetwork/MainActivity.kt) defines an inline `MaterialTheme` with brand colors (`primary = Color(0xFFE65100)` deep orange, `secondary = Color(0xFF2E7D32)` forest green, `surfaceVariant = Color(0xFFFFF3E0)` cream).
@@ -134,6 +138,8 @@ Defined across [gradle/libs.versions.toml](file:///Users/anish/Digital-Street-Ve
 | `com.google.firebase:firebase-auth` | `23.1.0` (via BOM) | Firebase Authentication — email+password sign-in and session management |
 | `com.google.firebase:firebase-firestore` | `25.1.1` (via BOM) | Cloud Firestore — user profile document storage (`/users/{uid}`) |
 | `com.google.firebase:firebase-analytics` | Via BOM | Firebase Analytics (added with initial Firebase setup) |
+| `androidx.lifecycle:lifecycle-viewmodel-compose` | `2.8.7` | `viewModel()` composable factory for `VendorViewModel` |
+| `org.jetbrains.kotlinx:kotlinx-coroutines-play-services` | `1.9.0` | `await()` extension for Firebase `Task<T>` in coroutines |
 | `androidx.navigation:navigation-compose` | `2.7.7` | Compose navigation library (*present, not yet used*) |
 | `junit:junit` | `4.13.2` | Local unit test framework |
 
@@ -185,26 +191,24 @@ Defined across [gradle/libs.versions.toml](file:///Users/anish/Digital-Street-Ve
 
 | Feature Area | Status | Current Code State |
 | :--- | :--- | :--- |
-| **Vendor Catalogue** | Implemented | In-memory CRUD with validation in `VendorCatalogueScreen`. |
+| **Vendor Catalogue** | Implemented | CRUD operations (`addProduct`, `deleteProduct`, `toggleProductAvailability`) persist to `/vendors/{vendorId}/products` in Firestore via `VendorViewModel`. Real-time `SnapshotListener` keeps `VendorCatalogueScreen` up to date. Duplicate-name and positive-price validation remain in the UI layer. |
 | **Vendor Orders** | Implemented | Status filtering, card actions, live earnings sync, simulated orders in `VendorOrdersScreen`. |
 | **Vendor Map Display** | Implemented | Google Maps with marker in `VendorLocationScreen`. |
+| **Vendor Business Settings** | Implemented | `stallName`, `isStallOpen`, `operatingHours`, `upiId` persisted to `/vendors/{vendorId}` in Firestore via `VendorViewModel`. Toggle writes instantly; Save writes all fields in a single merge. Document loaded on ViewModel init. |
 | **Customer Search & Cart** | Implemented | Search by vendor/product, category filter, bottom sheet menu, interactive quantity steppers, checkout modal in `CustomerDiscoverScreen`. |
 | **Customer Orders & Favourites** | Implemented | In-memory listing and real-time addition from checkout in `CustomerOrdersScreen` and `CustomerFavouritesScreen`. |
 | **Device GPS / Live Location** | Partial | Location toggle and coordinates state exist, but no `ACCESS_FINE_LOCATION` permission or `FusedLocationProviderClient` integration. |
-| **Cross-Role Order Sync** | Partial | Both roles have complete order workflows, but orders placed by a Customer are stored in customer memory and do not appear in the Vendor's order list. |
 | **Authentication & Users** | Implemented | Firebase Auth email+password (phone-derived email). Firestore `/users/{uid}` stores `name`, `phone`, `role`. Session restored on cold-start via `FirebaseAuth.currentUser`. |
-| **Data Persistence** | Partial | User identity and role persist via Firebase. All other state (catalogue, orders, cart) is in-memory and resets on app restart. |
-| **Secure API Key Management** | Missing | Maps API key is embedded directly in `AndroidManifest.xml` rather than loaded from `local.properties` via `secrets-gradle-plugin` or `BuildConfig`. |
-| **Architecture (ViewModel/MVI)** | Missing | UI composables manage their own business logic directly without ViewModels or repositories (except `FirebaseAuthRepository`). |
-| **Theme Alignment** | Missing | `ui/theme/Theme.kt` contains unused scaffold colors while `MainActivity.kt` declares custom colors inline. |
+| **Data Persistence** | Partial | User identity, role, Business Settings, and the Vendor Catalogue persist via Cloud Firestore. Orders and cart remain in-memory and reset on app restart. |
+| **Architecture (ViewModel)** | Partial | `VendorViewModel` manages Business Settings and the full Catalogue (add, delete, availability toggle) using `StateFlow` backed by Firestore. Orders and Customer flows still hoist state in Compose composables without ViewModels. |
 | **Cross-Role Order Sync** | Partial | Both roles have complete order workflows, but orders placed by a Customer are stored in customer memory and do not appear in the Vendor's order list. |
+| **Secure API Key Management** | Missing | Maps API key is embedded directly in `AndroidManifest.xml` rather than loaded from `local.properties` via `secrets-gradle-plugin` or `BuildConfig`. |
+| **Theme Alignment** | Missing | `ui/theme/Theme.kt` contains unused scaffold colors while `MainActivity.kt` declares custom colors inline. |
 
 ### Recommended Next Steps for Developers
-1. **Upgrade Kotlin to 2.4+:** Allows upgrading the Firebase BOM to `35.x` to use the latest Firebase SDK features. Both `libs.versions.toml` (`kotlin`) and AGP Kotlin plugin need updating together.
-2. **Firestore Order Sync:** Write `VendorOrder` and `CustomerOrder` documents to Firestore so that an order placed by a Customer is visible in real-time on the Vendor's Orders tab.
-3. **Secrets Management:** Extract the Google Maps API key from `AndroidManifest.xml` into `local.properties` and inject it dynamically using `secrets-gradle-plugin` or manifest placeholders.
-4. **Theme Consolidation:** Move the brand palette from `MainActivity.kt` into `ui/theme/Color.kt` and wrap the app in `DigitalStreetVendorNetworkTheme` to support system dark mode and dynamic colors.
-5. **Architecture Migration:** Introduce `ViewModel` classes (e.g. `VendorViewModel`, `CustomerViewModel`) and Kotlin `StateFlow` to survive configuration changes and separate UI from domain logic.
-6. **Persist App State:** Migrate in-memory catalogue, orders, and settings to Firestore so data survives across app restarts.
-7. **GPS Location Services:** Add runtime location permissions (`ACCESS_FINE_LOCATION`) and use `FusedLocationProviderClient` to display the vendor's actual street position.
-8. **Adopt Navigation Compose:** Replace manual `when (currentScreen)` and `selectedTab` integer state with typed Jetpack Compose navigation.
+1. **Vendor Orders Firestore Sync:** Write `VendorOrder` documents to a `/vendors/{vendorId}/orders` subcollection; attach a `SnapshotListener` so new Customer orders appear in the Vendor's Orders tab in real-time.
+3. **Upgrade Kotlin to 2.4+:** Allows upgrading the Firebase BOM to `35.x`. Both `libs.versions.toml` (`kotlin`) and the AGP Kotlin plugin need updating together.
+4. **Secrets Management:** Extract the Google Maps API key from `AndroidManifest.xml` into `local.properties` and inject via `secrets-gradle-plugin` or manifest placeholders.
+5. **Theme Consolidation:** Move the brand palette from `MainActivity.kt` into `ui/theme/Color.kt` and wrap the app in `DigitalStreetVendorNetworkTheme`.
+6. **GPS Location Services:** Add `ACCESS_FINE_LOCATION` permission and use `FusedLocationProviderClient` to broadcast the vendor's real device location.
+7. **Adopt Navigation Compose:** Replace manual `when (currentScreen)` and `selectedTab` integer routing with typed Jetpack Compose navigation.

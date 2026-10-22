@@ -74,9 +74,10 @@ class MainActivity : ComponentActivity() {
                                 currentScreen = "LOGIN"
                                 loggedInRole = ""
                             }
+                            val vendorId = authRepo.currentUser?.uid ?: ""
                             // Clean routing to our two separate architecture files
                             if (loggedInRole == "VENDOR") {
-                                VendorAppMainScreen(onLogout = handleLogout)
+                                VendorAppMainScreen(vendorId = vendorId, onLogout = handleLogout)
                             } else {
                                 CustomerAppMainScreen(onLogout = handleLogout)
                             }
