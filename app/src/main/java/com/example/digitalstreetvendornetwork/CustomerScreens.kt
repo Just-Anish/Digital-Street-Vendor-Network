@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.digitalstreetvendornetwork.viewmodel.ActiveVendor
 import com.example.digitalstreetvendornetwork.viewmodel.CustomerViewModel
+import com.example.digitalstreetvendornetwork.viewmodel.OrderPlacementResult
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -206,9 +207,10 @@ fun CustomerDiscoverScreen(
     favouriteVendorIds: MutableList<Int>,
     onPlaceOrder: (CustomerOrder) -> Unit = {}
 ) {
-    // ── Live Firestore vendor markers ────────────────────────────────────
+    // ── Live Firestore vendor markers + order placement ───────────────────
     val customerViewModel: CustomerViewModel = viewModel()
     val liveVendors by customerViewModel.activeVendors.collectAsState()
+    val orderPlacementResult by customerViewModel.orderPlacementResult.collectAsState()
 
     val mumbaiLocation = LatLng(19.0760, 72.8777)
     val cameraPositionState = rememberCameraPositionState {
@@ -295,6 +297,22 @@ fun CustomerDiscoverScreen(
     var deliveryOption by remember { mutableStateOf("Pickup") }
     var specialInstructions by remember { mutableStateOf("") }
     var showOrderSuccess by remember { mutableStateOf(false) }
+    var orderErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    // ── React to Firestore order placement result ─────────────────────────
+    LaunchedEffect(orderPlacementResult) {
+        when (val result = orderPlacementResult) {
+            is OrderPlacementResult.Success -> {
+                showOrderSuccess = true
+                customerViewModel.clearOrderResult()
+            }
+            is OrderPlacementResult.Error -> {
+                orderErrorMessage = result.message
+                customerViewModel.clearOrderResult()
+            }
+            OrderPlacementResult.Idle -> Unit
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
 
@@ -813,10 +831,18 @@ fun CustomerDiscoverScreen(
                                     date = "Today, Just now",
                                     status = "Pending"
                                 )
+                                // 1. Persist order to Firestore /orders collection
+                                customerViewModel.placeOrder(
+                                    vendorId = vendor.id.toString(),
+                                    items = menu,
+                                    quantities = cartQuantities.toMap(),
+                                    totalAmount = "₹$totalPayable"
+                                )
+                                // 2. Append to in-memory list for immediate UI update
                                 onPlaceOrder(newOrder)
                                 activeOrderingVendor = null
                                 cartQuantities.clear()
-                                showOrderSuccess = true
+                                // showOrderSuccess is now driven by orderPlacementResult observer
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -850,10 +876,25 @@ fun CustomerDiscoverScreen(
                 onDismissRequest = { showOrderSuccess = false },
                 icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(48.dp)) },
                 title = { Text("Order Placed Successfully!", fontWeight = FontWeight.Bold) },
-                text = { Text("The vendor has received your order request. You can track its status in the 'My Orders' tab.") },
+                text = { Text("Your order has been written to Firestore and the vendor has received your request. Track its status in the ‘My Orders’ tab.") },
                 confirmButton = {
                     Button(onClick = { showOrderSuccess = false }) {
                         Text("Track in My Orders")
+                    }
+                }
+            )
+        }
+
+        // Firestore error dialog
+        orderErrorMessage?.let { errMsg ->
+            AlertDialog(
+                onDismissRequest = { orderErrorMessage = null },
+                icon = { Icon(Icons.Filled.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(48.dp)) },
+                title = { Text("Order Failed", fontWeight = FontWeight.Bold) },
+                text = { Text(errMsg) },
+                confirmButton = {
+                    Button(onClick = { orderErrorMessage = null }) {
+                        Text("OK")
                     }
                 }
             )
