@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -39,6 +40,23 @@ data class Product(
     val isAvailable: Boolean = true
 )
 data class VendorReview(val id: Int, val customerName: String, val rating: Int, val comment: String, val date: String)
+
+enum class ExpenseCategory(val label: String, val emoji: String) {
+    RAW_MATERIALS("Raw Materials", "🥔"),
+    FUEL_GAS("Gas & Oil", "🔥"),
+    PACKAGING("Packaging", "📦"),
+    SPICES_DAIRY("Spices & Dairy", "🌶️"),
+    OTHER("Other Misc", "📋")
+}
+
+data class VendorExpense(
+    val id: String,
+    val title: String,
+    val category: ExpenseCategory,
+    val amount: Int,
+    val time: String,
+    val paymentMode: String = "Cash"
+)
 
 enum class VendorOrderStatus {
     PENDING,
@@ -68,9 +86,16 @@ data class VendorOrder(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun VendorAppMainScreen(onLogout: () -> Unit) {
+fun VendorAppMainScreen(
+    onLogout: () -> Unit,
+    onLanguageChange: (AppLanguage) -> Unit = {}
+) {
+    val t = LocalStrings.current
+    val currentLang = LocalAppLanguage.current
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
     var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Catalogue", "Location", "Orders", "Profile")
+    val tabs = listOf(t.catalogue, t.liveLocation, t.orders, t.profile)
 
     // Hoisted State for Catalogue
     val productList = remember { mutableStateListOf(
@@ -146,6 +171,16 @@ fun VendorAppMainScreen(onLogout: () -> Unit) {
     var todayEarnings by remember { mutableIntStateOf(1450) }
     var completedOrdersCount by remember { mutableIntStateOf(42) }
 
+    // Hoisted State for Daily Ledger (Khata Book)
+    val expensesList = remember {
+        mutableStateListOf(
+            VendorExpense("EXP-101", "Potatoes (50kg Bag - Mandi)", ExpenseCategory.RAW_MATERIALS, 350, "6:30 AM", "Cash"),
+            VendorExpense("EXP-102", "Refined Cooking Oil (5L)", ExpenseCategory.FUEL_GAS, 180, "7:15 AM", "UPI"),
+            VendorExpense("EXP-103", "Fresh Pav & Bread (10 dozen)", ExpenseCategory.RAW_MATERIALS, 120, "7:45 AM", "Cash"),
+            VendorExpense("EXP-104", "Paper Bags & Napkins", ExpenseCategory.PACKAGING, 30, "8:00 AM", "Cash")
+        )
+    }
+
     // Hoisted State for Business Settings
     var stallName by remember { mutableStateOf("Raju's Fresh Vends") }
     var isStallOpen by remember { mutableStateOf(true) }
@@ -162,7 +197,14 @@ fun VendorAppMainScreen(onLogout: () -> Unit) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = { Text(tabs[selectedTab], fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                actions = {
+                    LanguageSwitchPill(
+                        currentLanguage = currentLang,
+                        onClick = { showLanguageDialog = true },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
             )
         },
         bottomBar = {
@@ -260,10 +302,20 @@ fun VendorAppMainScreen(onLogout: () -> Unit) {
                     onUpiIdChange = { upiId = it },
                     todayEarnings = todayEarnings,
                     completedOrdersCount = completedOrdersCount,
+                    expensesList = expensesList,
+                    onLanguageClick = { showLanguageDialog = true },
                     onLogout = onLogout
                 )
             }
         }
+    }
+
+    if (showLanguageDialog) {
+        LanguageSelectionDialog(
+            currentLanguage = currentLang,
+            onLanguageSelected = onLanguageChange,
+            onDismissRequest = { showLanguageDialog = false }
+        )
     }
 }
 
@@ -743,8 +795,12 @@ fun VendorProfileScreen(
     onUpiIdChange: (String) -> Unit,
     todayEarnings: Int = 1450,
     completedOrdersCount: Int = 42,
+    expensesList: MutableList<VendorExpense> = remember { mutableStateListOf() },
+    onLanguageClick: () -> Unit = {},
     onLogout: () -> Unit
 ) {
+    val t = LocalStrings.current
+    val currentLang = LocalAppLanguage.current
     var currentSubScreen by remember { mutableStateOf("MAIN") }
 
     when (currentSubScreen) {
@@ -771,18 +827,18 @@ fun VendorProfileScreen(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (isStallOpen) "Open • $operatingHours" else "Currently Closed",
+                        text = if (isStallOpen) "${t.stallOpen} • $operatingHours" else t.stallClosed,
                         style = MaterialTheme.typography.bodyMedium,
                         color = if (isStallOpen) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Medium
                     )
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(28.dp))
 
                 Card(
                     onClick = { currentSubScreen = "EARNINGS" },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     shape = RoundedCornerShape(12.dp)
@@ -791,16 +847,45 @@ fun VendorProfileScreen(
                         Icon(Icons.Filled.Star, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                         Spacer(modifier = Modifier.width(16.dp))
                         Column(modifier = Modifier.weight(1f)) {
-                            Text("Earnings & Reviews", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                            Text("View daily revenue & customer ratings", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            Text("Earnings & Ledger", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text("View daily revenue, ledger & reviews", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                         }
                         Icon(Icons.Filled.KeyboardArrowRight, contentDescription = null, tint = Color.Gray)
                     }
                 }
 
                 Card(
+                    onClick = onLanguageClick,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Row(modifier = Modifier.padding(16.dp).fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Filled.Translate, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(t.language, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                            Text("${currentLang.displayName} (${currentLang.nativeName})", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                        }
+                        Surface(
+                            shape = RoundedCornerShape(8.dp),
+                            color = MaterialTheme.colorScheme.primaryContainer
+                        ) {
+                            Text(
+                                text = t.changeLanguage,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
+
+                Card(
                     onClick = { currentSubScreen = "SETTINGS" },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     shape = RoundedCornerShape(12.dp)
@@ -826,7 +911,7 @@ fun VendorProfileScreen(
                 ) {
                     Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Close Shop (Logout)", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                    Text("${t.closeStall} (${t.logout})", fontSize = MaterialTheme.typography.titleMedium.fontSize)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -834,6 +919,7 @@ fun VendorProfileScreen(
         "EARNINGS" -> VendorEarningsAndReviewsScreen(
             todayEarnings = todayEarnings,
             completedOrdersCount = completedOrdersCount,
+            expensesList = expensesList,
             onBack = { currentSubScreen = "MAIN" }
         )
         "SETTINGS" -> VendorBusinessSettingsScreen(
@@ -846,61 +932,606 @@ fun VendorProfileScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun VendorEarningsAndReviewsScreen(
     todayEarnings: Int = 1450,
     completedOrdersCount: Int = 42,
+    expensesList: MutableList<VendorExpense>,
     onBack: () -> Unit
 ) {
-    val reviews = remember { listOf(
-        VendorReview(1, "Aarav Sharma", 5, "Best Vada Pav near the station! Always served piping hot.", "Today"),
-        VendorReview(2, "Priya Patel", 4, "Chai is super refreshing, very hygienic stall setup.", "Yesterday"),
-        VendorReview(3, "Rohan Mehta", 5, "Misal Pav was spicy and authentic. Great value for money!", "3 days ago")
-    )}
+    val t = LocalStrings.current
+    var selectedTab by remember { mutableIntStateOf(0) } // 0: Khata Book, 1: Reviews
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
-            Text("Earnings & Reviews", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+    var showAddExpenseDialog by remember { mutableStateOf(false) }
+    var newExpenseTitle by remember { mutableStateOf("") }
+    var newExpenseAmount by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf(ExpenseCategory.RAW_MATERIALS) }
+    var selectedPaymentMode by remember { mutableStateOf("Cash") }
+    var titleError by remember { mutableStateOf(false) }
+    var amountError by remember { mutableStateOf(false) }
+
+    var expenseToDelete by remember { mutableStateOf<VendorExpense?>(null) }
+
+    val totalExpenses = expensesList.sumOf { it.amount }
+    val netProfit = todayEarnings - totalExpenses
+    val profitMargin = if (todayEarnings > 0) ((netProfit.toDouble() / todayEarnings.toDouble()) * 100).toInt() else 0
+    val expenseRatio = if (todayEarnings > 0) (totalExpenses.toFloat() / todayEarnings.toFloat()).coerceIn(0f, 1f) else 0f
+
+    // Quick presets for real-world street vendors
+    val quickPresets = listOf(
+        Triple("Potatoes (Mandi)", ExpenseCategory.RAW_MATERIALS, 200),
+        Triple("Cooking Oil Refill", ExpenseCategory.FUEL_GAS, 150),
+        Triple("Fresh Pav / Bread", ExpenseCategory.RAW_MATERIALS, 100),
+        Triple("Chillies, Garlic & Spices", ExpenseCategory.SPICES_DAIRY, 50)
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF9F9FB))
+            .padding(16.dp)
+    ) {
+        // Top Navigation Bar
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Text(
+                text = if (selectedTab == 0) t.khataBook else "Reviews & Ratings",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
 
-        Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-            Row(modifier = Modifier.fillMaxWidth().padding(20.dp), horizontalArrangement = Arrangement.SpaceAround) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Today's Earnings", style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
-                    Text("₹%,d".format(todayEarnings), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+        // Sub Tabs: Khata Book vs Reviews
+        TabRow(
+            selectedTabIndex = selectedTab,
+            containerColor = Color.Transparent
+        ) {
+            Tab(
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(Icons.Filled.AccountBalanceWallet, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text(t.khataBook, fontWeight = if (selectedTab == 0) FontWeight.Bold else FontWeight.Normal)
+                    }
                 }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Orders Completed", style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
-                    Text("$completedOrdersCount", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            )
+            Tab(
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                text = {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        Icon(Icons.Filled.Star, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Text("Reviews (4.8 ★)", fontWeight = if (selectedTab == 1) FontWeight.Bold else FontWeight.Normal)
+                    }
                 }
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text("Avg Rating", style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
-                    Text("4.8 ★", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color(0xFFFFA000))
+            )
+        }
+
+        Spacer(modifier = Modifier.height(14.dp))
+
+        if (selectedTab == 0) {
+            // LEDGER (KHATA BOOK) TAB
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(14.dp),
+                contentPadding = PaddingValues(bottom = 24.dp)
+            ) {
+                // 1. HERO FINANCIAL HEALTH & NET PROFIT CARD
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E3A2F)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = t.netProfit,
+                                    style = MaterialTheme.typography.titleSmall,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                                Surface(
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = Color(0xFF2E7D32).copy(alpha = 0.8f)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.TrendingUp,
+                                            contentDescription = null,
+                                            tint = Color(0xFFA5D6A7),
+                                            modifier = Modifier.size(14.dp)
+                                        )
+                                        Text(
+                                            text = "${t.profitMargin}: $profitMargin%",
+                                            color = Color(0xFFA5D6A7),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(6.dp))
+
+                            Text(
+                                text = "₹%,d".format(netProfit),
+                                style = MaterialTheme.typography.headlineLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+                            HorizontalDivider(color = Color.White.copy(alpha = 0.15f))
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Comparative Balance Columns
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = t.totalRevenue,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = Color.White.copy(alpha = 0.7f)
+                                    )
+                                    Text(
+                                        text = "+₹%,d".format(todayEarnings),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFA5D6A7)
+                                    )
+                                    Text(
+                                        text = "$completedOrdersCount ${t.orders.lowercase()} done",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .width(1.dp)
+                                        .height(40.dp)
+                                        .background(Color.White.copy(alpha = 0.15f))
+                                )
+
+                                Column(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .padding(start = 16.dp)
+                                ) {
+                                    Text(
+                                        text = t.totalExpenses,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = Color.White.copy(alpha = 0.7f)
+                                    )
+                                    Text(
+                                        text = "-₹%,d".format(totalExpenses),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFFFAB91)
+                                    )
+                                    Text(
+                                        text = "${expensesList.size} costs recorded",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = Color.White.copy(alpha = 0.5f)
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+                            LinearProgressIndicator(
+                                progress = { expenseRatio },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = Color(0xFFFFAB91),
+                                trackColor = Color(0xFF2E7D32)
+                            )
+                        }
+                    }
+                }
+
+                // 2. QUICK ONE-TAP STREET VENDOR PRESETS
+                item {
+                    Column {
+                        Text(
+                            text = "Quick Log (One-Tap Mandi Presets)",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Gray
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(quickPresets) { (title, category, amount) ->
+                                Surface(
+                                    onClick = {
+                                        val newExp = VendorExpense(
+                                            id = "EXP-${(100..999).random()}",
+                                            title = title,
+                                            category = category,
+                                            amount = amount,
+                                            time = "Just now",
+                                            paymentMode = "Cash"
+                                        )
+                                        expensesList.add(0, newExp)
+                                    },
+                                    shape = RoundedCornerShape(12.dp),
+                                    color = MaterialTheme.colorScheme.surface,
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                                    shadowElevation = 1.dp
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Text(category.emoji, fontSize = 14.sp)
+                                        Text("+ ₹$amount $title", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // 3. ACTION HEADER
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Today's Expense Ledger (${expensesList.size})",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Button(
+                            onClick = {
+                                newExpenseTitle = ""
+                                newExpenseAmount = ""
+                                titleError = false
+                                amountError = false
+                                showAddExpenseDialog = true
+                            },
+                            shape = RoundedCornerShape(12.dp),
+                            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp)
+                        ) {
+                            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(t.addExpense, style = MaterialTheme.typography.labelMedium)
+                        }
+                    }
+                }
+
+                // 4. EXPENSE TRANSACTIONS
+                if (expensesList.isEmpty()) {
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(32.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Icon(Icons.Filled.ReceiptLong, contentDescription = null, modifier = Modifier.size(40.dp), tint = Color.Gray)
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text("No expenses logged today", fontWeight = FontWeight.Bold, color = Color.DarkGray)
+                                Text("Record Mandi vegetables, oil, gas to calculate net profit.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            }
+                        }
+                    }
+                } else {
+                    items(expensesList, key = { it.id }) { expense ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(40.dp)
+                                            .clip(CircleShape)
+                                            .background(MaterialTheme.colorScheme.primaryContainer),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Text(text = expense.category.emoji, fontSize = 18.sp)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Text(
+                                            text = expense.title,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.SemiBold
+                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Text(
+                                                text = "${expense.time} • ${expense.category.label}",
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = Color.Gray
+                                            )
+                                            Surface(
+                                                shape = RoundedCornerShape(4.dp),
+                                                color = Color(0xFFF0F0F0)
+                                            ) {
+                                                Text(
+                                                    text = expense.paymentMode,
+                                                    style = MaterialTheme.typography.labelSmall,
+                                                    color = Color.DarkGray,
+                                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "-₹${expense.amount}",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFFD32F2F)
+                                    )
+                                    IconButton(
+                                        onClick = { expenseToDelete = expense },
+                                        modifier = Modifier.size(32.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Outlined.DeleteOutline,
+                                            contentDescription = "Delete",
+                                            tint = Color.Gray,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
-        }
+        } else {
+            // REVIEWS TAB
+            val reviews = remember { listOf(
+                VendorReview(1, "Aarav Sharma", 5, "Best Vada Pav near the station! Always served piping hot.", "Today"),
+                VendorReview(2, "Priya Patel", 4, "Chai is super refreshing, very hygienic stall setup.", "Yesterday"),
+                VendorReview(3, "Rohan Mehta", 5, "Misal Pav was spicy and authentic. Great value for money!", "3 days ago")
+            )}
 
-        Spacer(modifier = Modifier.height(24.dp))
-        Text("Recent Customer Feedback", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(12.dp))
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(reviews) { review ->
-                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(review.customerName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            Text(review.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Average Rating", style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
+                                Text("4.8 ★", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color(0xFFFFA000))
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Total Reviews", style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
+                                Text("128", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text("Happy Shoppers", style = MaterialTheme.typography.bodyMedium, color = Color.DarkGray)
+                                Text("98%", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                            }
                         }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Row { repeat(review.rating) { Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFFA000), modifier = Modifier.size(16.dp)) } }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(review.comment, style = MaterialTheme.typography.bodyMedium)
+                    }
+                }
+
+                items(reviews) { review ->
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(14.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                        colors = CardDefaults.cardColors(containerColor = Color.White)
+                    ) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(review.customerName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                Text(review.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Row {
+                                repeat(review.rating) {
+                                    Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFFA000), modifier = Modifier.size(16.dp))
+                                }
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(review.comment, style = MaterialTheme.typography.bodyMedium)
+                        }
                     }
                 }
             }
         }
+    }
+
+    // Add Expense Dialog
+    if (showAddExpenseDialog) {
+        AlertDialog(
+            onDismissRequest = { showAddExpenseDialog = false },
+            title = {
+                Text(t.addExpense, fontWeight = FontWeight.Bold)
+            },
+            text = {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = newExpenseTitle,
+                        onValueChange = { newExpenseTitle = it; titleError = false },
+                        label = { Text(t.expenseTitle) },
+                        placeholder = { Text("e.g. Mandi Vegetables, Cooking Oil") },
+                        isError = titleError,
+                        supportingText = { if (titleError) Text("Please enter expense name") },
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = newExpenseAmount,
+                        onValueChange = { newExpenseAmount = it; amountError = false },
+                        label = { Text(t.expenseAmount) },
+                        placeholder = { Text("e.g. 250") },
+                        isError = amountError,
+                        supportingText = { if (amountError) Text("Enter valid amount greater than ₹0") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(t.expenseCategory, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        items(ExpenseCategory.values()) { cat ->
+                            FilterChip(
+                                selected = selectedCategory == cat,
+                                onClick = { selectedCategory = cat },
+                                label = { Text("${cat.emoji} ${cat.label}") },
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text("Payment Mode", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        FilterChip(
+                            selected = selectedPaymentMode == "Cash",
+                            onClick = { selectedPaymentMode = "Cash" },
+                            label = { Text("Cash") },
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                        FilterChip(
+                            selected = selectedPaymentMode == "UPI",
+                            onClick = { selectedPaymentMode = "UPI" },
+                            label = { Text("UPI Online") },
+                            shape = RoundedCornerShape(10.dp)
+                        )
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        val amount = newExpenseAmount.trim().toIntOrNull()
+                        titleError = newExpenseTitle.isBlank()
+                        amountError = amount == null || amount <= 0
+
+                        if (!titleError && !amountError) {
+                            val newEntry = VendorExpense(
+                                id = "EXP-${(100..999).random()}",
+                                title = newExpenseTitle.trim(),
+                                category = selectedCategory,
+                                amount = amount!!,
+                                time = "Just now",
+                                paymentMode = selectedPaymentMode
+                            )
+                            expensesList.add(0, newEntry)
+                            showAddExpenseDialog = false
+                        }
+                    },
+                    shape = RoundedCornerShape(10.dp)
+                ) {
+                    Text(t.save)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showAddExpenseDialog = false }) {
+                    Text(t.cancel)
+                }
+            }
+        )
+    }
+
+    // Delete Confirmation Dialog
+    if (expenseToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { expenseToDelete = null },
+            title = { Text("Remove Expense?") },
+            text = { Text("Are you sure you want to remove '${expenseToDelete?.title}' (-₹${expenseToDelete?.amount}) from today's ledger?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        expensesList.remove(expenseToDelete)
+                        expenseToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { expenseToDelete = null }) {
+                    Text(t.cancel)
+                }
+            }
+        )
     }
 }
 
@@ -966,8 +1597,14 @@ fun VendorOrdersScreen(
     onDeclineOrder: (VendorOrder) -> Unit,
     onSimulateOrder: () -> Unit
 ) {
+    val t = LocalStrings.current
     var selectedFilter by remember { mutableStateOf("Pending") }
-    val filters = listOf("Pending", "Preparing", "Completed", "All")
+    val filterItems = listOf(
+        "Pending" to t.pending,
+        "Preparing" to t.preparing,
+        "Completed" to t.completed,
+        "All" to t.all
+    )
 
     val pendingCount = ordersList.count { it.status == VendorOrderStatus.PENDING }
     val preparingCount = ordersList.count { it.status == VendorOrderStatus.PREPARING }
@@ -998,12 +1635,12 @@ fun VendorOrdersScreen(
         ) {
             Column {
                 Text(
-                    text = "Live Order Queue",
+                    text = t.incomingOrders,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "$pendingCount incoming • $preparingCount in kitchen",
+                    text = "$pendingCount ${t.pending} • $preparingCount ${t.preparing}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.Gray
                 )
@@ -1023,7 +1660,7 @@ fun VendorOrdersScreen(
                     modifier = Modifier.size(16.dp)
                 )
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("Test Incoming", style = MaterialTheme.typography.labelMedium)
+                Text(t.simulateOrder, style = MaterialTheme.typography.labelMedium)
             }
         }
 
@@ -1034,19 +1671,19 @@ fun VendorOrdersScreen(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(filters) { filter ->
-                val count = when (filter) {
+            items(filterItems) { (filterKey, filterLabel) ->
+                val count = when (filterKey) {
                     "Pending" -> pendingCount
                     "Preparing" -> preparingCount
                     "Completed" -> completedCount
                     else -> ordersList.size
                 }
-                val label = "$filter ($count)"
-                val isSelected = selectedFilter == filter
+                val label = "$filterLabel ($count)"
+                val isSelected = selectedFilter == filterKey
 
                 FilterChip(
                     selected = isSelected,
-                    onClick = { selectedFilter = filter },
+                    onClick = { selectedFilter = filterKey },
                     label = {
                         Text(
                             text = label,
@@ -1137,6 +1774,7 @@ fun VendorOrderCard(
     onComplete: () -> Unit,
     onDecline: () -> Unit
 ) {
+    val t = LocalStrings.current
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(18.dp),
@@ -1164,12 +1802,11 @@ fun VendorOrderCard(
                     )
                 }
 
-                // Status chip
                 val (statusBg, statusColor, statusText) = when (order.status) {
-                    VendorOrderStatus.PENDING -> Triple(Color(0xFFFFF3E0), Color(0xFFE65100), "Incoming")
-                    VendorOrderStatus.PREPARING -> Triple(Color(0xFFE3F2FD), Color(0xFF1976D2), "Preparing")
-                    VendorOrderStatus.COMPLETED -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), "Completed")
-                    VendorOrderStatus.DECLINED -> Triple(Color(0xFFFFEBEE), Color(0xFFD32F2F), "Declined")
+                    VendorOrderStatus.PENDING -> Triple(Color(0xFFFFF3E0), Color(0xFFE65100), t.pending)
+                    VendorOrderStatus.PREPARING -> Triple(Color(0xFFE3F2FD), Color(0xFF1976D2), t.preparing)
+                    VendorOrderStatus.COMPLETED -> Triple(Color(0xFFE8F5E9), Color(0xFF2E7D32), t.completed)
+                    VendorOrderStatus.DECLINED -> Triple(Color(0xFFFFEBEE), Color(0xFFD32F2F), t.cancel)
                 }
 
                 Surface(
@@ -1337,7 +1974,7 @@ fun VendorOrderCard(
                         ) {
                             Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Decline")
+                            Text(t.cancel)
                         }
 
                         Button(
@@ -1352,7 +1989,7 @@ fun VendorOrderCard(
                         ) {
                             Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Accept")
+                            Text(t.acceptOrder)
                         }
                     }
                 }
@@ -1371,7 +2008,7 @@ fun VendorOrderCard(
                     ) {
                         Icon(Icons.Filled.DoneAll, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Mark Ready & Complete")
+                        Text(t.completeOrder)
                     }
                 }
 

@@ -95,8 +95,16 @@ fun searchVendors(
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerAppMainScreen(onLogout: () -> Unit) {
+fun CustomerAppMainScreen(
+    onLogout: () -> Unit,
+    onLanguageChange: (AppLanguage) -> Unit = {}
+) {
+    val t = LocalStrings.current
+    val currentLang = LocalAppLanguage.current
+    var showLanguageDialog by remember { mutableStateOf(false) }
+
     var selectedTab by remember { mutableIntStateOf(0) }
 
     val favouriteVendorIds = remember {
@@ -134,16 +142,29 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
     }
 
     val tabs = listOf(
-        "Discover",
-        "Favourites",
-        "My Orders",
-        "Profile"
+        t.discover,
+        t.favourites,
+        t.myOrders,
+        t.profile
     )
 
     var customerName by remember { mutableStateOf("Local Shopper") }
     var customerPhone by remember { mutableStateOf("+91 9876543210") }
 
     Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = { Text(tabs[selectedTab], fontWeight = FontWeight.Bold) },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+                actions = {
+                    LanguageSwitchPill(
+                        currentLanguage = currentLang,
+                        onClick = { showLanguageDialog = true },
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                }
+            )
+        },
         bottomBar = {
             NavigationBar {
                 tabs.forEachIndexed { index, title ->
@@ -188,10 +209,19 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
                     phone = customerPhone,
                     onNameChange = { customerName = it },
                     onPhoneChange = { customerPhone = it },
+                    onLanguageClick = { showLanguageDialog = true },
                     onLogout = onLogout
                 )
             }
         }
+    }
+
+    if (showLanguageDialog) {
+        LanguageSelectionDialog(
+            currentLanguage = currentLang,
+            onLanguageSelected = onLanguageChange,
+            onDismissRequest = { showLanguageDialog = false }
+        )
     }
 }
 
@@ -203,6 +233,7 @@ fun CustomerDiscoverScreen(
     favouriteVendorIds: MutableList<Int>,
     onPlaceOrder: (CustomerOrder) -> Unit = {}
 ) {
+    val t = LocalStrings.current
     val mumbaiLocation = LatLng(19.0760, 72.8777)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(mumbaiLocation, 12f)
@@ -318,7 +349,7 @@ fun CustomerDiscoverScreen(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = {
-                    Text("Search for vendors or items...")
+                    Text(t.searchVendors)
                 },
                 leadingIcon = {
                     Icon(
@@ -724,13 +755,13 @@ fun CustomerDiscoverScreen(
                             FilterChip(
                                 selected = deliveryOption == "Pickup",
                                 onClick = { deliveryOption = "Pickup" },
-                                label = { Text("Stall Pickup (Free)") },
+                                label = { Text("${t.pickupAtStall} (Free)") },
                                 shape = RoundedCornerShape(12.dp)
                             )
                             FilterChip(
                                 selected = deliveryOption == "Nearby",
                                 onClick = { deliveryOption = "Nearby" },
-                                label = { Text("Nearby Delivery (+₹10)") },
+                                label = { Text("${t.nearbyDelivery} (+₹10)") },
                                 shape = RoundedCornerShape(12.dp)
                             )
                         }
@@ -740,7 +771,7 @@ fun CustomerDiscoverScreen(
                         OutlinedTextField(
                             value = specialInstructions,
                             onValueChange = { specialInstructions = it },
-                            placeholder = { Text("Special instructions (e.g. extra spicy)") },
+                            placeholder = { Text(t.specialInstructions) },
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true
@@ -759,7 +790,7 @@ fun CustomerDiscoverScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Items Subtotal ($totalItems items)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                    Text("${t.itemTotal} ($totalItems)", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                                     Text("₹$subtotal", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                                 }
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -767,7 +798,7 @@ fun CustomerDiscoverScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.SpaceBetween
                                 ) {
-                                    Text("Delivery Fee", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                                    Text(t.taxesPackaging, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
                                     Text(if (deliveryFee == 0) "FREE" else "₹10", style = MaterialTheme.typography.bodyMedium, color = if (deliveryFee == 0) Color(0xFF2E7D32) else Color.DarkGray)
                                 }
                                 Spacer(modifier = Modifier.height(8.dp))
@@ -778,7 +809,7 @@ fun CustomerDiscoverScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text("Total Payable", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Text(t.toPay, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                                     Text("₹$totalPayable", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                                 }
                             }
@@ -813,7 +844,7 @@ fun CustomerDiscoverScreen(
                             Icon(Icons.Filled.ShoppingBag, contentDescription = null, tint = Color.White)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = "Place Order • ₹$totalPayable",
+                                text = "${t.placeOrder} • ₹$totalPayable",
                                 fontSize = MaterialTheme.typography.titleMedium.fontSize,
                                 fontWeight = FontWeight.Bold,
                                 color = Color.White
@@ -833,11 +864,11 @@ fun CustomerDiscoverScreen(
             AlertDialog(
                 onDismissRequest = { showOrderSuccess = false },
                 icon = { Icon(Icons.Filled.CheckCircle, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(48.dp)) },
-                title = { Text("Order Placed Successfully!", fontWeight = FontWeight.Bold) },
+                title = { Text(t.orderPlacedSuccess, fontWeight = FontWeight.Bold) },
                 text = { Text("The vendor has received your order request. You can track its status in the 'My Orders' tab.") },
                 confirmButton = {
                     Button(onClick = { showOrderSuccess = false }) {
-                        Text("Track in My Orders")
+                        Text(t.myOrders)
                     }
                 }
             )
@@ -852,8 +883,11 @@ fun CustomerProfileScreen(
     phone: String,
     onNameChange: (String) -> Unit,
     onPhoneChange: (String) -> Unit,
+    onLanguageClick: () -> Unit = {},
     onLogout: () -> Unit
 ) {
+    val t = LocalStrings.current
+    val currentLang = LocalAppLanguage.current
     var currentSubScreen by remember { mutableStateOf("MAIN") }
 
     when (currentSubScreen) {
@@ -869,6 +903,7 @@ fun CustomerProfileScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 ProfileOptionCard(icon = Icons.Filled.History, title = "Order History") { currentSubScreen = "HISTORY" }
+                ProfileOptionCard(icon = Icons.Filled.Translate, title = "${t.language}: ${currentLang.nativeName} (${currentLang.displayName})") { onLanguageClick() }
                 ProfileOptionCard(icon = Icons.Filled.Settings, title = "Account Settings") { currentSubScreen = "SETTINGS" }
 
                 Spacer(modifier = Modifier.weight(1f))
@@ -878,7 +913,7 @@ fun CustomerProfileScreen(
                 ) {
                     Icon(Icons.Filled.ExitToApp, contentDescription = "Logout")
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Logout", fontSize = MaterialTheme.typography.titleMedium.fontSize)
+                    Text(t.logout, fontSize = MaterialTheme.typography.titleMedium.fontSize)
                 }
                 Spacer(modifier = Modifier.height(16.dp))
             }
