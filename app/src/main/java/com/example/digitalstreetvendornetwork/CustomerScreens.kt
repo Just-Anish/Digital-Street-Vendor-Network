@@ -20,6 +20,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.viewmodel.ActiveVendor
+import com.example.digitalstreetvendornetwork.viewmodel.CustomerViewModel
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.GoogleMap
@@ -203,6 +206,10 @@ fun CustomerDiscoverScreen(
     favouriteVendorIds: MutableList<Int>,
     onPlaceOrder: (CustomerOrder) -> Unit = {}
 ) {
+    // ── Live Firestore vendor markers ────────────────────────────────────
+    val customerViewModel: CustomerViewModel = viewModel()
+    val liveVendors by customerViewModel.activeVendors.collectAsState()
+
     val mumbaiLocation = LatLng(19.0760, 72.8777)
     val cameraPositionState = rememberCameraPositionState {
         position = CameraPosition.fromLatLngZoom(mumbaiLocation, 12f)
@@ -295,6 +302,7 @@ fun CustomerDiscoverScreen(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState
         ) {
+            // Hardcoded demo vendors (existing UI, category filter + search applied)
             visibleVendors.forEach { vendor ->
                 Marker(
                     state = MarkerState(position = vendor.location),
@@ -304,6 +312,14 @@ fun CustomerDiscoverScreen(
                         selectedVendor = vendor
                         true
                     }
+                )
+            }
+            // Live Firestore vendors: open + broadcasting + have saved coordinates
+            liveVendors.forEach { vendor ->
+                Marker(
+                    state = MarkerState(position = LatLng(vendor.lat, vendor.lng)),
+                    title = vendor.stallName,
+                    snippet = "Live • Open Now"
                 )
             }
         }
