@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,6 +40,7 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.launch
 
 // Data Models
 data class CustomerOrder(val id: String, val vendorName: String, val items: String, val total: String, val date: String, val status: String)
@@ -102,8 +104,47 @@ fun searchVendors(vendors: List<DiscoverableVendor>, query: String): List<Discov
 
 @Composable
 fun CustomerAppMainScreen(onLogout: () -> Unit) {
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
     val favouriteVendorIds = remember { mutableStateListOf<String>() }
+
+    fun showSnackbar(message: String) {
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
+    fun removeFavourite(id: String) {
+        val index = favouriteVendorIds.indexOf(id)
+        if (index != -1) {
+            favouriteVendorIds.removeAt(index)
+            scope.launch {
+                snackbarHostState.currentSnackbarData?.dismiss()
+                val result = snackbarHostState.showSnackbar(
+                    message = context.getString(R.string.snackbar_removed_from_favourites),
+                    actionLabel = context.getString(R.string.undo),
+                    duration = SnackbarDuration.Short
+                )
+                if (result == SnackbarResult.ActionPerformed) {
+                    val insertIndex = index.coerceIn(0, favouriteVendorIds.size)
+                    favouriteVendorIds.add(insertIndex, id)
+                }
+            }
+        }
+    }
+
+    fun addFavourite(id: String) {
+        if (!favouriteVendorIds.contains(id)) {
+            favouriteVendorIds.add(id)
+            showSnackbar(context.getString(R.string.snackbar_added_to_favourites))
+        }
+    }
 
     val customerOrders = remember {
         mutableStateListOf(
@@ -142,23 +183,29 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
                     )
                 }
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
             when (selectedTab) {
                 0 -> CustomerDiscoverScreen(
                     favouriteVendorIds = favouriteVendorIds,
+                    onToggleFavourite = { id ->
+                        if (id in favouriteVendorIds) removeFavourite(id)
+                        else addFavourite(id)
+                    },
                     onPlaceOrder = { newOrder -> customerOrders.add(0, newOrder) }
                 )
                 1 -> CustomerFavouritesScreen(
                     favouriteVendorIds = favouriteVendorIds,
                     onExploreClick = { selectedTab = 0 },
-                    onRemoveFavourite = { id -> favouriteVendorIds.remove(id) }
+                    onRemoveFavourite = { id -> removeFavourite(id) }
                 )
                 2 -> CustomerOrdersScreen(orders = customerOrders)
                 3 -> CustomerProfileScreen(
                     name = customerName, phone = customerPhone,
                     onNameChange = { customerName = it }, onPhoneChange = { customerPhone = it },
+                    onProfileUpdated = { showSnackbar(context.getString(R.string.snackbar_profile_updated)) },
                     onLogout = onLogout
                 )
             }
@@ -168,7 +215,11 @@ fun CustomerAppMainScreen(onLogout: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder: (CustomerOrder) -> Unit = {}) {
+fun CustomerDiscoverScreen(
+    favouriteVendorIds: MutableList<String>,
+    onToggleFavourite: ((String) -> Unit)? = null,
+    onPlaceOrder: (CustomerOrder) -> Unit = {}
+) {
     val customerViewModel: CustomerViewModel = viewModel()
     val liveVendors by customerViewModel.activeVendors.collectAsState()
     val orderPlacementResult by customerViewModel.orderPlacementResult.collectAsState()
@@ -310,7 +361,13 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                             Text(text = vendor.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                             Text(text = vendor.category, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium)
                         }
-                        IconButton(onClick = { if (vendor.id in favouriteVendorIds) favouriteVendorIds.remove(vendor.id) else favouriteVendorIds.add(vendor.id) }) {
+                        IconButton(onClick = {
+                            if (onToggleFavourite != null) {
+                                onToggleFavourite(vendor.id)
+                            } else {
+                                if (vendor.id in favouriteVendorIds) favouriteVendorIds.remove(vendor.id) else favouriteVendorIds.add(vendor.id)
+                            }
+                        }) {
                             val isFavourite = vendor.id in favouriteVendorIds
                             Icon(imageVector = if (isFavourite) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder, contentDescription = null, tint = if (isFavourite) Color.Red else Color.Gray)
                         }
@@ -569,7 +626,12 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomerProfileScreen(
-    name: String, phone: String, onNameChange: (String) -> Unit, onPhoneChange: (String) -> Unit, onLogout: () -> Unit
+    name: String,
+    phone: String,
+    onNameChange: (String) -> Unit,
+    onPhoneChange: (String) -> Unit,
+    onProfileUpdated: () -> Unit = {},
+    onLogout: () -> Unit
 ) {
     var currentSubScreen by remember { mutableStateOf("MAIN") }
     var showLanguageDialog by remember { mutableStateOf(false) }
@@ -606,7 +668,12 @@ fun CustomerProfileScreen(
         "HISTORY" -> CustomerOrderHistoryScreen(onBack = { currentSubScreen = "MAIN" })
         "SETTINGS" -> CustomerSettingsScreen(
             currentName = name, currentPhone = phone,
-            onSave = { newName, newPhone -> onNameChange(newName); onPhoneChange(newPhone); currentSubScreen = "MAIN" },
+            onSave = { newName, newPhone ->
+                onNameChange(newName)
+                onPhoneChange(newPhone)
+                onProfileUpdated()
+                currentSubScreen = "MAIN"
+            },
             onBack = { currentSubScreen = "MAIN" }
         )
     }

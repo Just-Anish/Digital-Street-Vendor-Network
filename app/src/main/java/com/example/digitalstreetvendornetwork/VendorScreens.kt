@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -30,6 +31,7 @@ import com.example.digitalstreetvendornetwork.ui.components.OrderProgressTracker
 import com.example.digitalstreetvendornetwork.ui.components.SwipeToDeleteContainer
 import com.example.digitalstreetvendornetwork.ui.theme.*
 import com.example.digitalstreetvendornetwork.viewmodel.Order
+import com.example.digitalstreetvendornetwork.viewmodel.SaveResult
 import com.example.digitalstreetvendornetwork.viewmodel.VendorViewModel
 import kotlinx.coroutines.launch
 import com.google.android.gms.maps.model.CameraPosition
@@ -53,6 +55,9 @@ data class VendorReview(val id: Int, val customerName: String, val rating: Int, 
 @Composable
 fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
     val viewModel: VendorViewModel = viewModel()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var selectedTab by remember { mutableIntStateOf(0) }
     val tabs = listOf(
         stringResource(R.string.tab_catalogue),
@@ -72,6 +77,31 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
     val activeOrders by viewModel.activeOrders.collectAsState()
     val todayEarnings by viewModel.todayEarnings.collectAsState()
     val completedOrderCount by viewModel.completedOrderCount.collectAsState()
+    val saveResult by viewModel.saveResult.collectAsState()
+
+    fun showSnackbar(message: String) {
+        scope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short
+            )
+        }
+    }
+
+    LaunchedEffect(saveResult) {
+        when (val result = saveResult) {
+            is SaveResult.Success -> {
+                showSnackbar(context.getString(R.string.snackbar_settings_saved))
+                viewModel.clearSaveResult()
+            }
+            is SaveResult.Error -> {
+                showSnackbar(result.message)
+                viewModel.clearSaveResult()
+            }
+            SaveResult.Idle -> Unit
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -99,31 +129,59 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
                     )
                 }
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedTab) {
                 0 -> VendorCatalogueScreen(
                     productList = productList,
-                    onAddProduct = { name, price, desc -> viewModel.addProduct(name, price, desc) },
-                    onDeleteProduct = { id -> viewModel.deleteProduct(id) }
+                    onAddProduct = { name, price, desc ->
+                        viewModel.addProduct(name, price, desc)
+                        showSnackbar(context.getString(R.string.snackbar_product_added))
+                    },
+                    onDeleteProduct = { id ->
+                        viewModel.deleteProduct(id)
+                        showSnackbar(context.getString(R.string.snackbar_product_deleted))
+                    }
                 )
                 1 -> VendorLocationScreen(
                     isBroadcasting = isBroadcastingLocation,
                     stallLat = stallLat,
                     stallLng = stallLng,
-                    onToggleBroadcast = { viewModel.toggleLocationBroadcast(it) },
+                    onToggleBroadcast = { enabled ->
+                        viewModel.toggleLocationBroadcast(enabled)
+                        showSnackbar(
+                            if (enabled) context.getString(R.string.snackbar_location_broadcast_started)
+                            else context.getString(R.string.snackbar_location_broadcast_stopped)
+                        )
+                    },
                     onLocationChange = { lat, lng -> viewModel.updateLocation(lat, lng) }
                 )
                 2 -> VendorOrdersScreen(
                     orders = activeOrders,
-                    onUpdateStatus = { orderId, newStatus -> viewModel.updateOrderStatus(orderId, newStatus) }
+                    onUpdateStatus = { orderId, newStatus ->
+                        viewModel.updateOrderStatus(orderId, newStatus)
+                        val message = when (newStatus.uppercase()) {
+                            "PREPARING" -> context.getString(R.string.snackbar_order_accepted)
+                            "DECLINED" -> context.getString(R.string.snackbar_order_declined)
+                            "COMPLETED" -> context.getString(R.string.snackbar_order_completed)
+                            else -> "Status: $newStatus"
+                        }
+                        showSnackbar(message)
+                    }
                 )
                 3 -> VendorProfileScreen(
                     stallName = stallName,
                     onStallNameChange = { viewModel.updateBusinessSettings(it, operatingHours, upiId) },
                     isStallOpen = isStallOpen,
-                    onStallOpenChange = { viewModel.toggleStallStatus(it) },
+                    onStallOpenChange = { open ->
+                        viewModel.toggleStallStatus(open)
+                        showSnackbar(
+                            if (open) context.getString(R.string.snackbar_stall_opened)
+                            else context.getString(R.string.snackbar_stall_closed)
+                        )
+                    },
                     operatingHours = operatingHours,
                     onOperatingHoursChange = { viewModel.updateBusinessSettings(stallName, it, upiId) },
                     upiId = upiId,

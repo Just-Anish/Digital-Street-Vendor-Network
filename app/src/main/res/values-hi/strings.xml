@@ -189,4 +189,20 @@
     <string name="no_products_title">अभी कोई सामान नहीं है</string>
     <string name="no_products_msg">पहला सामान जोड़ने के लिए + दबाएं</string>
     <string name="clear_search">सर्च हटाएं</string>
+
+    <!-- Confirmation Snackbars -->
+    <string name="snackbar_settings_saved">सेटिंग्स सहेजी गईं</string>
+    <string name="snackbar_product_added">सामान जोड़ा गया</string>
+    <string name="snackbar_product_deleted">सामान हटाया गया</string>
+    <string name="snackbar_stall_opened">दुकान चालू की गई</string>
+    <string name="snackbar_stall_closed">दुकान बंद की गई</string>
+    <string name="snackbar_location_broadcast_started">लाइव लोकेशन प्रसारण शुरू हुआ</string>
+    <string name="snackbar_location_broadcast_stopped">लाइव लोकेशन प्रसारण बंद हुआ</string>
+    <string name="snackbar_order_accepted">ऑर्डर स्वीकार किया गया</string>
+    <string name="snackbar_order_declined">ऑर्डर अस्वीकार किया गया</string>
+    <string name="snackbar_order_completed">ऑर्डर पूरा हुआ</string>
+    <string name="snackbar_added_to_favourites">पसंदीदा में जोड़ा गया</string>
+    <string name="snackbar_removed_from_favourites">पसंदीदा से हटाया गया</string>
+    <string name="snackbar_profile_updated">प्रोफ़ाइल अपडेट की गई</string>
+    <string name="undo">वापस लें</string>
 </resources>

@@ -189,4 +189,20 @@
     <string name="no_products_title">No products yet</string>
     <string name="no_products_msg">Tap + to add your first item</string>
     <string name="clear_search">Clear Search</string>
+
+    <!-- Confirmation Snackbars -->
+    <string name="snackbar_settings_saved">Settings saved</string>
+    <string name="snackbar_product_added">Product added</string>
+    <string name="snackbar_product_deleted">Product deleted</string>
+    <string name="snackbar_stall_opened">Stall opened</string>
+    <string name="snackbar_stall_closed">Stall closed</string>
+    <string name="snackbar_location_broadcast_started">Location broadcasting started</string>
+    <string name="snackbar_location_broadcast_stopped">Location broadcasting stopped</string>
+    <string name="snackbar_order_accepted">Order accepted</string>
+    <string name="snackbar_order_declined">Order declined</string>
+    <string name="snackbar_order_completed">Order completed</string>
+    <string name="snackbar_added_to_favourites">Added to favourites</string>
+    <string name="snackbar_removed_from_favourites">Removed from favourites</string>
+    <string name="snackbar_profile_updated">Profile updated</string>
+    <string name="undo">Undo</string>
 </resources>
