@@ -3,6 +3,7 @@ package com.example.digitalstreetvendornetwork
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -19,6 +20,9 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.digitalstreetvendornetwork.ui.theme.DigitalStreetVendorNetworkTheme
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -27,7 +31,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             DigitalStreetVendorNetworkTheme(darkTheme = false) {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    var currentScreen by remember { mutableStateOf("LOGIN") }
+                    var currentScreen by remember { mutableStateOf("SPLASH") }
                     var loggedInRole by remember { mutableStateOf("") }
 
                     // Single repository instance shared across composables
@@ -35,41 +39,62 @@ class MainActivity : ComponentActivity() {
 
                     // Restore an existing Firebase session on cold-start
                     LaunchedEffect(Unit) {
-                        val user = authRepo.currentUser
-                        if (user != null) {
-                            try {
-                                loggedInRole = authRepo.fetchRole(user.uid)
+                        coroutineScope {
+                            val delayJob = async { delay(1500L) }
+                            val restoreJob = async {
+                                val user = authRepo.currentUser
+                                if (user != null) {
+                                    try {
+                                        val role = authRepo.fetchRole(user.uid)
+                                        role to true
+                                    } catch (_: Exception) {
+                                        // Firestore fetch failed — fall through to LOGIN
+                                        authRepo.logout()
+                                        "" to false
+                                    }
+                                } else {
+                                    "" to false
+                                }
+                            }
+
+                            delayJob.await()
+                            val (role, success) = restoreJob.await()
+
+                            if (success && role.isNotBlank()) {
+                                loggedInRole = role
                                 currentScreen = "MAIN"
-                            } catch (_: Exception) {
-                                // Firestore fetch failed — fall through to LOGIN
-                                authRepo.logout()
+                            } else {
+                                currentScreen = "LOGIN"
                             }
                         }
                     }
 
-                    when (currentScreen) {
-                        "LOGIN" -> LoginScreen(
-                            authRepo = authRepo,
-                            onLoginSuccess = { role -> loggedInRole = role; currentScreen = "MAIN" },
-                            onNavigateToSignup = { currentScreen = "SIGNUP" }
-                        )
-                        "SIGNUP" -> SignupScreen(
-                            authRepo = authRepo,
-                            onSignupSuccess = { role -> loggedInRole = role; currentScreen = "MAIN" },
-                            onNavigateToLogin = { currentScreen = "LOGIN" }
-                        )
-                        "MAIN" -> {
-                            val handleLogout = {
-                                authRepo.logout()
-                                currentScreen = "LOGIN"
-                                loggedInRole = ""
-                            }
-                            val vendorId = authRepo.currentUser?.uid ?: ""
-                            // Clean routing to our two separate architecture files
-                            if (loggedInRole == "VENDOR") {
-                                VendorAppMainScreen(vendorId = vendorId, onLogout = handleLogout)
-                            } else {
-                                CustomerAppMainScreen(onLogout = handleLogout)
+                    Crossfade(targetState = currentScreen, label = "ScreenTransition") { screen ->
+                        when (screen) {
+                            "SPLASH" -> SplashScreen()
+                            "LOGIN" -> LoginScreen(
+                                authRepo = authRepo,
+                                onLoginSuccess = { role -> loggedInRole = role; currentScreen = "MAIN" },
+                                onNavigateToSignup = { currentScreen = "SIGNUP" }
+                            )
+                            "SIGNUP" -> SignupScreen(
+                                authRepo = authRepo,
+                                onSignupSuccess = { role -> loggedInRole = role; currentScreen = "MAIN" },
+                                onNavigateToLogin = { currentScreen = "LOGIN" }
+                            )
+                            "MAIN" -> {
+                                val handleLogout = {
+                                    authRepo.logout()
+                                    currentScreen = "LOGIN"
+                                    loggedInRole = ""
+                                }
+                                val vendorId = authRepo.currentUser?.uid ?: ""
+                                // Clean routing to our two separate architecture files
+                                if (loggedInRole == "VENDOR") {
+                                    VendorAppMainScreen(vendorId = vendorId, onLogout = handleLogout)
+                                } else {
+                                    CustomerAppMainScreen(onLogout = handleLogout)
+                                }
                             }
                         }
                     }
