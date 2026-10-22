@@ -23,6 +23,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.digitalstreetvendornetwork.viewmodel.VendorViewModel
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.MarkerState
+import com.google.maps.android.compose.rememberCameraPositionState
 
 data class Product(
     var id: String = "",
@@ -46,6 +52,9 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
     val isStallOpen by viewModel.isStallOpen.collectAsState(initial = false)
     val operatingHours by viewModel.operatingHours.collectAsState(initial = "")
     val upiId by viewModel.upiId.collectAsState(initial = "")
+    val isBroadcastingLocation by viewModel.isBroadcastingLocation.collectAsState()
+    val stallLat by viewModel.stallLat.collectAsState()
+    val stallLng by viewModel.stallLng.collectAsState()
 
     Scaffold(
         topBar = {
@@ -82,7 +91,13 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
                     onAddProduct = { name, price, desc -> viewModel.addProduct(name, price, desc) },
                     onDeleteProduct = { id -> viewModel.deleteProduct(id) }
                 )
-                1 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Map Integration Pending") }
+                1 -> VendorLocationScreen(
+                    isBroadcasting = isBroadcastingLocation,
+                    stallLat = stallLat,
+                    stallLng = stallLng,
+                    onToggleBroadcast = { viewModel.toggleLocationBroadcast(it) },
+                    onLocationChange = { lat, lng -> viewModel.updateLocation(lat, lng) }
+                )
                 2 -> Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No Active Orders") }
                 3 -> VendorProfileScreen(
                     stallName = stallName,
@@ -170,6 +185,82 @@ fun VendorCatalogueScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun VendorLocationScreen(
+    isBroadcasting: Boolean,
+    stallLat: Double,
+    stallLng: Double,
+    onToggleBroadcast: (Boolean) -> Unit,
+    onLocationChange: (lat: Double, lng: Double) -> Unit
+) {
+    val markerState = remember(stallLat, stallLng) {
+        MarkerState(position = LatLng(stallLat, stallLng))
+    }
+    val cameraPositionState = rememberCameraPositionState {
+        position = CameraPosition.fromLatLngZoom(LatLng(stallLat, stallLng), 15f)
+    }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Map fills the upper portion of the screen
+        Box(modifier = Modifier.weight(1f)) {
+            GoogleMap(
+                modifier = Modifier.fillMaxSize(),
+                cameraPositionState = cameraPositionState,
+                onMapClick = { latLng ->
+                    markerState.position = latLng
+                    onLocationChange(latLng.latitude, latLng.longitude)
+                }
+            ) {
+                Marker(
+                    state = markerState,
+                    title = "My Stall",
+                    draggable = true,
+                    onClick = { false }   // don't consume — let map click also fire
+                )
+            }
+            // Marker drag listener: capture the final dropped position
+            LaunchedEffect(markerState.position) {
+                onLocationChange(markerState.position.latitude, markerState.position.longitude)
+            }
+        }
+
+        // Broadcast toggle card at the bottom
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 20.dp, vertical = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = "Broadcast Location",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = if (isBroadcasting) "Visible to customers on map" else "Hidden from customer map",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (isBroadcasting) MaterialTheme.colorScheme.secondary else Color.Gray
+                    )
+                }
+                Switch(
+                    checked = isBroadcasting,
+                    onCheckedChange = onToggleBroadcast
+                )
             }
         }
     }
