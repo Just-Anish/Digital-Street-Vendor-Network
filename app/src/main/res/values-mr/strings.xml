@@ -184,4 +184,9 @@
     <string name="save_changes">बदल जतन करा</string>
     <string name="no_past_orders">मागील कोणतीही ऑर्डर नाही</string>
     <string name="past_orders_empty_msg">तुमच्या पूर्ण झालेल्या ऑर्डर्स येथे दिसतील.</string>
+
+    <!-- Empty States -->
+    <string name="no_products_title">अजून कोणतीही वस्तू नाही</string>
+    <string name="no_products_msg">पहिली वस्तू जोडण्यासाठी + दाबा</string>
+    <string name="clear_search">सर्च काढा</string>
 </resources>

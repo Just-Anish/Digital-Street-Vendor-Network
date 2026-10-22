@@ -184,4 +184,9 @@
     <string name="save_changes">Save Changes</string>
     <string name="no_past_orders">No past orders</string>
     <string name="past_orders_empty_msg">Your completed orders will appear here.</string>
+
+    <!-- Empty States -->
+    <string name="no_products_title">No products yet</string>
+    <string name="no_products_msg">Tap + to add your first item</string>
+    <string name="clear_search">Clear Search</string>
 </resources>

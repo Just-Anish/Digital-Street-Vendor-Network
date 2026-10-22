@@ -184,4 +184,9 @@
     <string name="save_changes">बदलाव सहेजें</string>
     <string name="no_past_orders">कोई पुराना ऑर्डर नहीं है</string>
     <string name="past_orders_empty_msg">आपके पूरे हुए ऑर्डर यहां दिखाई देंगे।</string>
+
+    <!-- Empty States -->
+    <string name="no_products_title">अभी कोई सामान नहीं है</string>
+    <string name="no_products_msg">पहला सामान जोड़ने के लिए + दबाएं</string>
+    <string name="clear_search">सर्च हटाएं</string>
 </resources>

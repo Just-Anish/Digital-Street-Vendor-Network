@@ -25,6 +25,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.digitalstreetvendornetwork.ui.components.EmptyState
 import com.example.digitalstreetvendornetwork.ui.components.OrderProgressTracker
 import com.example.digitalstreetvendornetwork.ui.components.SwipeToDeleteContainer
 import com.example.digitalstreetvendornetwork.ui.theme.*
@@ -268,9 +269,30 @@ fun CustomerDiscoverScreen(favouriteVendorIds: MutableList<String>, onPlaceOrder
                 }
             }
             if (visibleVendors.isEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
-                Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = Color.White)) {
-                    Text(text = stringResource(R.string.no_vendors_found) + " " + stringResource(R.string.no_vendors_sub), modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(20.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        EmptyState(
+                            icon = Icons.Filled.SearchOff,
+                            title = stringResource(R.string.no_vendors_found),
+                            message = stringResource(R.string.no_vendors_sub),
+                            actionLabel = stringResource(R.string.clear_search),
+                            onAction = {
+                                searchQuery = ""
+                                selectedFilter = "All"
+                            }
+                        )
+                    }
                 }
             }
         }
@@ -688,12 +710,19 @@ fun CustomerFavouritesScreen(
         Text(text = stringResource(R.string.my_favourite_vendors), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(20.dp))
         if (favouriteVendorIds.isEmpty()) {
-            Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(imageVector = Icons.Filled.FavoriteBorder, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.Gray)
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(stringResource(R.string.no_favourites_title))
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = onExploreClick) { Text(stringResource(R.string.explore_vendors)) }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyState(
+                    icon = Icons.Filled.FavoriteBorder,
+                    title = stringResource(R.string.no_favourites_title),
+                    message = stringResource(R.string.no_favourites_msg),
+                    actionLabel = stringResource(R.string.explore_vendors),
+                    onAction = onExploreClick
+                )
             }
         } else {
             LazyColumn(
@@ -760,44 +789,50 @@ fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
         Spacer(modifier = Modifier.height(16.dp))
 
         if (filteredOrders.isEmpty()) {
-            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(imageVector = Icons.Filled.Inbox, contentDescription = null, modifier = Modifier.size(56.dp), tint = Color.Gray)
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(text = stringResource(R.string.no_orders_yet), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(text = stringResource(R.string.no_orders_match), style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                Spacer(modifier = Modifier.height(16.dp))
-                Button(onClick = { selectedOrderFilter = "All" }) { Text(stringResource(R.string.show_all_orders)) }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 32.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyState(
+                    icon = Icons.Filled.Inbox,
+                    title = stringResource(R.string.no_orders_yet),
+                    message = stringResource(R.string.no_orders_match),
+                    actionLabel = stringResource(R.string.show_all_orders),
+                    onAction = { selectedOrderFilter = "All" }
+                )
             }
-        }
-
-        LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items(filteredOrders.size) { index ->
-                val order = filteredOrders[index]
-                Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = order.id, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
-                            val statusLabel = when (order.status.uppercase()) {
-                                "PENDING" -> stringResource(R.string.status_pending)
-                                "PREPARING" -> stringResource(R.string.status_preparing)
-                                "COMPLETED" -> stringResource(R.string.status_completed)
-                                "DECLINED" -> stringResource(R.string.status_declined)
-                                else -> order.status
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                items(filteredOrders.size) { index ->
+                    val order = filteredOrders[index]
+                    Card(modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Text(text = order.id, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold)
+                                val statusLabel = when (order.status.uppercase()) {
+                                    "PENDING" -> stringResource(R.string.status_pending)
+                                    "PREPARING" -> stringResource(R.string.status_preparing)
+                                    "COMPLETED" -> stringResource(R.string.status_completed)
+                                    "DECLINED" -> stringResource(R.string.status_declined)
+                                    else -> order.status
+                                }
+                                Text(text = statusLabel, color = statusColors[order.status] ?: Color.Gray, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
                             }
-                            Text(text = statusLabel, color = statusColors[order.status] ?: Color.Gray, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Text(text = order.vendorName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(text = order.items, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OrderProgressTracker(status = order.status)
-                        Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalDivider()
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text(text = order.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                            Text(text = order.total, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(text = order.vendorName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(text = order.items, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OrderProgressTracker(status = order.status)
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider()
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                Text(text = order.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                                Text(text = order.total, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                            }
                         }
                     }
                 }

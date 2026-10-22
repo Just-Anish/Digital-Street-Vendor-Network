@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.digitalstreetvendornetwork.LanguageSelectionDialog
 import com.example.digitalstreetvendornetwork.R
+import com.example.digitalstreetvendornetwork.ui.components.EmptyState
 import com.example.digitalstreetvendornetwork.ui.components.OrderProgressTracker
 import com.example.digitalstreetvendornetwork.ui.components.SwipeToDeleteContainer
 import com.example.digitalstreetvendornetwork.ui.theme.*
@@ -223,43 +224,61 @@ fun VendorCatalogueScreen(
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
-        ) {
-            items(productList, key = { it.id }) { product ->
-                val dismissState = rememberSwipeToDismissBoxState()
+        if (productList.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                EmptyState(
+                    icon = Icons.Filled.Inventory2,
+                    title = stringResource(R.string.no_products_title),
+                    message = stringResource(R.string.no_products_msg),
+                    actionLabel = stringResource(R.string.add_product),
+                    onAction = { showDialog = true }
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp), contentPadding = PaddingValues(top = 16.dp, bottom = 80.dp)
+            ) {
+                items(productList, key = { it.id }) { product ->
+                    val dismissState = rememberSwipeToDismissBoxState()
 
-                SwipeToDeleteContainer(
-                    onDelete = {
-                        pendingDismissState = dismissState
-                        productToDelete = product
-                    },
-                    state = dismissState,
-                    modifier = Modifier.animateItem()
-                ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                    SwipeToDeleteContainer(
+                        onDelete = {
+                            pendingDismissState = dismissState
+                            productToDelete = product
+                        },
+                        state = dismissState,
+                        modifier = Modifier.animateItem()
                     ) {
-                        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
-                                Icon(Icons.Filled.Fastfood, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(product.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column(horizontalAlignment = Alignment.End) {
-                                Text(product.price, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
-                                IconButton(onClick = {
-                                    pendingDismissState = null
-                                    productToDelete = product
-                                }) {
-                                    Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_product), tint = MaterialTheme.colorScheme.error)
+                        Card(
+                            modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.size(60.dp).clip(CircleShape).background(MaterialTheme.colorScheme.surfaceVariant), contentAlignment = Alignment.Center) {
+                                    Icon(Icons.Filled.Fastfood, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                }
+                                Spacer(modifier = Modifier.width(16.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(product.description, style = MaterialTheme.typography.bodySmall, color = Color.Gray, maxLines = 2)
+                                }
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Column(horizontalAlignment = Alignment.End) {
+                                    Text(product.price, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                                    IconButton(onClick = {
+                                        pendingDismissState = null
+                                        productToDelete = product
+                                    }) {
+                                        Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.delete_product), tint = MaterialTheme.colorScheme.error)
+                                    }
                                 }
                             }
                         }
@@ -678,26 +697,12 @@ fun VendorOrdersScreen(
     onUpdateStatus: (orderId: String, newStatus: String) -> Unit
 ) {
     if (orders.isEmpty()) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                    Icons.Filled.ShoppingCart,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = Color.LightGray
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    stringResource(R.string.no_orders_yet),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.Gray
-                )
-                Text(
-                    stringResource(R.string.no_orders_sub),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.LightGray
-                )
-            }
+        Box(modifier = Modifier.fillMaxSize().padding(24.dp), contentAlignment = Alignment.Center) {
+            EmptyState(
+                icon = Icons.Filled.ReceiptLong,
+                title = stringResource(R.string.no_orders_yet),
+                message = stringResource(R.string.no_orders_sub)
+            )
         }
         return
     }
