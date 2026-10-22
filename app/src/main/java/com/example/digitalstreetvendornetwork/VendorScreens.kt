@@ -57,6 +57,8 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
     val stallLat by viewModel.stallLat.collectAsState()
     val stallLng by viewModel.stallLng.collectAsState()
     val activeOrders by viewModel.activeOrders.collectAsState()
+    val todayEarnings by viewModel.todayEarnings.collectAsState()
+    val completedOrderCount by viewModel.completedOrderCount.collectAsState()
 
     Scaffold(
         topBar = {
@@ -113,6 +115,9 @@ fun VendorAppMainScreen(vendorId: String, onLogout: () -> Unit) {
                     onOperatingHoursChange = { viewModel.updateBusinessSettings(stallName, it, upiId) },
                     upiId = upiId,
                     onUpiIdChange = { viewModel.updateBusinessSettings(stallName, operatingHours, it) },
+                    todayEarnings = todayEarnings,
+                    completedOrderCount = completedOrderCount,
+                    onRefreshEarnings = { viewModel.calculateTodayEarnings() },
                     onLogout = onLogout
                 )
             }
@@ -277,6 +282,9 @@ fun VendorProfileScreen(
     isStallOpen: Boolean, onStallOpenChange: (Boolean) -> Unit,
     operatingHours: String, onOperatingHoursChange: (String) -> Unit,
     upiId: String, onUpiIdChange: (String) -> Unit,
+    todayEarnings: String,
+    completedOrderCount: Int,
+    onRefreshEarnings: () -> Unit,
     onLogout: () -> Unit
 ) {
     var currentSubScreen by remember { mutableStateOf("MAIN") }
@@ -327,7 +335,12 @@ fun VendorProfileScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-        "EARNINGS" -> VendorEarningsAndReviewsScreen(onBack = { currentSubScreen = "MAIN" })
+        "EARNINGS" -> VendorEarningsAndReviewsScreen(
+            todayEarnings = todayEarnings,
+            completedOrderCount = completedOrderCount,
+            onRefreshEarnings = onRefreshEarnings,
+            onBack = { currentSubScreen = "MAIN" }
+        )
         "SETTINGS" -> VendorBusinessSettingsScreen(
             stallName, onStallNameChange, isStallOpen, onStallOpenChange, operatingHours, onOperatingHoursChange, upiId, onUpiIdChange, onBack = { currentSubScreen = "MAIN" }
         )
@@ -335,13 +348,187 @@ fun VendorProfileScreen(
 }
 
 @Composable
-fun VendorEarningsAndReviewsScreen(onBack: () -> Unit) {
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)) {
-            IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = MaterialTheme.colorScheme.primary) }
-            Text("Earnings & Reviews", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+fun VendorEarningsAndReviewsScreen(
+    todayEarnings: String,
+    completedOrderCount: Int,
+    onRefreshEarnings: () -> Unit,
+    onBack: () -> Unit
+) {
+    // Trigger a fresh calculation each time the screen is entered
+    LaunchedEffect(Unit) { onRefreshEarnings() }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        // Back-bar
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+            Text(
+                "Earnings & Reviews",
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold
+            )
         }
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Reviews Sync Pending") }
+
+        Text(
+            text = "Today's Summary",
+            style = MaterialTheme.typography.titleSmall,
+            color = Color.Gray,
+            modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+        )
+
+        // ── Revenue card ───────────────────────────────────────────────────────
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 14.dp),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "Total Revenue Today",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = todayEarnings,
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(
+                            MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.CurrencyRupee,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            }
+        }
+
+        // ── Completed orders card ────────────────────────────────────────────
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 14.dp),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color(0xFFE8F5E9)   // light green tint
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 3.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = "Orders Completed Today",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color(0xFF388E3C).copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "$completedOrderCount",
+                        style = MaterialTheme.typography.displaySmall,
+                        fontWeight = FontWeight.ExtraBold,
+                        color = Color(0xFF2E7D32)
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .background(
+                            Color(0xFF2E7D32).copy(alpha = 0.12f),
+                            CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Filled.CheckCircle,
+                        contentDescription = null,
+                        tint = Color(0xFF2E7D32),
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            }
+        }
+
+        // ── Reviews teaser card ────────────────────────────────────────────────
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Customer Reviews",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.Gray
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Coming in a future update",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.LightGray
+                    )
+                }
+                Icon(
+                    Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = Color(0xFFFFC107),
+                    modifier = Modifier.size(32.dp)
+                )
+            }
+        }
     }
 }
 
