@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import com.example.digitalstreetvendornetwork.Product
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.SetOptions
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -54,10 +55,21 @@ class VendorViewModel : ViewModel() {
     private val _saveResult = MutableStateFlow<SaveResult>(SaveResult.Idle)
     val saveResult: StateFlow<SaveResult> = _saveResult.asStateFlow()
 
+    // ── Live incoming orders (Batch 4B) ──────────────────────────────────────────
+
+    private val _activeOrders = MutableStateFlow<List<Order>>(emptyList())
+    /**
+     * Real-time list of orders whose vendorId matches the logged-in vendor UID.
+     * Sourced from /orders via a whereEqualTo("vendorId", uid) SnapshotListener.
+     * Ordered by timestamp descending (newest first).
+     */
+    val activeOrders: StateFlow<List<Order>> = _activeOrders.asStateFlow()
+
     init {
         if (vendorId != null) {
             listenToBusinessSettings()
             listenToCatalogue()
+            listenToOrders()
         } else {
             Log.e("VendorViewModel", "Error: User is not logged in!")
         }
@@ -168,4 +180,66 @@ class VendorViewModel : ViewModel() {
             .set(mapOf("isBroadcastingLocation" to isBroadcasting), SetOptions.merge())
             .addOnFailureListener { e -> Log.e("VendorViewModel", "toggleLocationBroadcast failed", e) }
     }
+
+    // ── Order listening & status management (Batch 4B) ────────────────────────
+
+    /**
+     * Attaches a real-time SnapshotListener to the top-level /orders collection,
+     * filtered to documents where vendorId == this vendor's UID.
+     *
+     * Results are sorted by [Order.timestamp] descending so the newest order
+     * always appears first. The listener is automatically cleaned up when the
+     * ViewModel is cleared.
+     *
+     * Firestore path queried: /orders where vendorId == uid, orderBy timestamp DESC
+     */
+    private fun listenToOrders() {
+        if (vendorId == null) return
+        db.collection("orders")
+            .whereEqualTo("vendorId", vendorId)
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("VendorViewModel", "listenToOrders error", error)
+                    return@addSnapshotListener
+                }
+                if (snapshot == null) return@addSnapshotListener
+
+                val orders = snapshot.documents.mapNotNull { doc ->
+                    Order(
+                        orderId     = doc.getString("orderId") ?: doc.id,
+                        customerId  = doc.getString("customerId") ?: "",
+                        vendorId    = doc.getString("vendorId") ?: "",
+                        items       = (doc.get("items") as? List<*>)?.map { it.toString() } ?: emptyList(),
+                        totalAmount = doc.getString("totalAmount") ?: "",
+                        status      = doc.getString("status") ?: "PENDING",
+                        timestamp   = doc.getLong("timestamp") ?: 0L
+                    )
+                }
+                _activeOrders.value = orders
+            }
+    }
+
+    /**
+     * Updates the [Order.status] field of a single /orders document in Firestore.
+     *
+     * Valid transitions driven from [VendorOrdersScreen]:
+     *   PENDING   -> PREPARING  (vendor accepts)
+     *   PREPARING -> COMPLETED  (vendor marks done)
+     *   PENDING   -> DECLINED   (vendor rejects)
+     *
+     * Firestore path: /orders/{orderId}
+     * Field written (merge): status: String
+     *
+     * @param orderId   The Firestore document ID of the order to update.
+     * @param newStatus One of: "PENDING", "PREPARING", "COMPLETED", "DECLINED".
+     */
+    fun updateOrderStatus(orderId: String, newStatus: String) {
+        db.collection("orders").document(orderId)
+            .set(mapOf("status" to newStatus), SetOptions.merge())
+            .addOnFailureListener { e ->
+                Log.e("VendorViewModel", "updateOrderStatus($orderId -> $newStatus) failed", e)
+            }
+    }
 }
+
