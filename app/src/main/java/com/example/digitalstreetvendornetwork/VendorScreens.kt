@@ -639,7 +639,6 @@ fun VendorOrderCard(
     order: Order,
     onUpdateStatus: (orderId: String, newStatus: String) -> Unit
 ) {
-    // Derive status badge colours
     val (statusColor, statusLabel) = when (order.status.uppercase()) {
         "PENDING"   -> Pair(Color(0xFFFFA000), "Pending")
         "PREPARING" -> Pair(Color(0xFF1976D2), "Preparing")
@@ -656,7 +655,6 @@ fun VendorOrderCard(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            // ── Header row: order ID + status badge ──────────────────────────
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -682,45 +680,21 @@ fun VendorOrderCard(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
-
-            // ── Customer info ────────────────────────────────────────────────
-            Text(
-                text = "Customer ID: ${order.customerId.take(12)}…",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
-
+            Text(text = "Customer ID: ${order.customerId.take(12)}…", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             Spacer(modifier = Modifier.height(6.dp))
-
-            // ── Items list ───────────────────────────────────────────────────
-            Text(
-                text = order.items.joinToString(" · "),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium
-            )
-
+            Text(text = order.items.joinToString(" · "), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
             Spacer(modifier = Modifier.height(6.dp))
+            Text(text = order.totalAmount, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
 
-            // ── Total ────────────────────────────────────────────────────────
-            Text(
-                text = order.totalAmount,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.secondary
-            )
-
-            // ── Action buttons (context-sensitive) ───────────────────────────
+            // Context-sensitive action buttons
             when (order.status.uppercase()) {
                 "PENDING" -> {
                     Spacer(modifier = Modifier.height(12.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             onClick = { onUpdateStatus(order.orderId, "PREPARING") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
+                            modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
@@ -728,11 +702,8 @@ fun VendorOrderCard(
                         }
                         OutlinedButton(
                             onClick = { onUpdateStatus(order.orderId, "DECLINED") },
-                            modifier = Modifier.weight(1f),
-                            shape = RoundedCornerShape(10.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
+                            modifier = Modifier.weight(1f), shape = RoundedCornerShape(10.dp),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
                             Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
@@ -744,18 +715,36 @@ fun VendorOrderCard(
                     Spacer(modifier = Modifier.height(12.dp))
                     Button(
                         onClick = { onUpdateStatus(order.orderId, "COMPLETED") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2E7D32)
-                        )
+                        modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(10.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
                     ) {
                         Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Mark Complete", fontWeight = FontWeight.Bold)
                     }
                 }
-                // COMPLETED / DECLINED: no action buttons — read-only terminal states
+            }
+
+            // NEW: Review Display Section
+            order.rating?.let { rating ->
+                Spacer(modifier = Modifier.height(12.dp))
+                Surface(
+                    color = Color(0xFFFFF8E1),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("$rating/5 Stars", fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelMedium)
+                        }
+                        if (!order.reviewText.isNullOrBlank()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text("\"${order.reviewText}\"", style = MaterialTheme.typography.bodySmall, color = Color.DarkGray)
+                        }
+                    }
+                }
             }
         }
     }

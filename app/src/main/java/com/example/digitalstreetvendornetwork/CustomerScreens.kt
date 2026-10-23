@@ -1,5 +1,6 @@
 package com.example.digitalstreetvendornetwork
 
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -36,9 +37,16 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.firebase.firestore.FirebaseFirestore
 
 // Data Models
-data class CustomerOrder(val id: String, val vendorName: String, val items: String, val total: String, val date: String, val status: String)
-data class MenuItem(val name: String, val price: String)
-
+data class CustomerOrder(
+    val id: String,
+    val vendorName: String,
+    val items: String,
+    val total: String,
+    val date: String,
+    val status: String,
+    var rating: Int? = null,
+    var reviewText: String? = null
+)
 data class VendorMenuItem(
     val id: Int,
     val name: String,
@@ -689,7 +697,7 @@ fun CustomerFavouritesScreen(favouriteVendorIds: List<String>, onExploreClick: (
 @Composable
 fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
     val defaultOrders = remember {
-        listOf(
+        mutableStateListOf(
             CustomerOrder("ORD001", "Raju Vegetables", "Tomatoes, Potatoes", "₹120", "18 Oct 2026", "Completed"),
             CustomerOrder("ORD002", "Mumbai Chaat Corner", "Pani Puri, Bhel Puri", "₹90", "19 Oct 2026", "Preparing"),
             CustomerOrder("ORD003", "Mumbai Fresh Fruits", "Apples, Bananas", "₹180", "20 Oct 2026", "Pending")
@@ -702,6 +710,11 @@ fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
     val filteredOrders = remember(displayOrders, selectedOrderFilter) {
         if (selectedOrderFilter == "All") displayOrders else displayOrders.filter { it.status == selectedOrderFilter }
     }
+
+    // Review Dialog States
+    var reviewTarget by remember { mutableStateOf<CustomerOrder?>(null) }
+    var reviewRating by remember { mutableIntStateOf(5) }
+    var reviewComment by remember { mutableStateOf("") }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(text = "My Orders", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
@@ -741,13 +754,84 @@ fun CustomerOrdersScreen(orders: List<CustomerOrder> = emptyList()) {
                         Spacer(modifier = Modifier.height(12.dp))
                         HorizontalDivider()
                         Spacer(modifier = Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             Text(text = order.date, style = MaterialTheme.typography.bodySmall, color = Color.Gray)
                             Text(text = order.total, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        }
+
+                        // NEW: Rate & Review Section
+                        if (order.status == "Completed" && order.rating == null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedButton(
+                                onClick = { reviewTarget = order },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFFB300))
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Rate & Review Food")
+                            }
+                        } else if (order.rating != null) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Surface(color = Color(0xFFFFF8E1), shape = RoundedCornerShape(8.dp)) {
+                                Row(modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(Icons.Filled.Star, contentDescription = null, tint = Color(0xFFFFB300), modifier = Modifier.size(16.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text("You rated this ${order.rating}/5", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+    }
+
+    // NEW: Review Dialog Popup
+    if (reviewTarget != null) {
+        AlertDialog(
+            onDismissRequest = { reviewTarget = null; reviewComment = ""; reviewRating = 5 },
+            title = { Text("Rate your order", fontWeight = FontWeight.Bold) },
+            text = {
+                Column {
+                    Text("Vendor: ${reviewTarget?.vendorName}", fontWeight = FontWeight.Medium)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth()) {
+                        for (i in 1..5) {
+                            IconButton(onClick = { reviewRating = i }) {
+                                Icon(
+                                    imageVector = if (i <= reviewRating) Icons.Filled.Star else Icons.Outlined.Star,
+                                    contentDescription = "$i Star",
+                                    tint = Color(0xFFFFB300),
+                                    modifier = Modifier.size(36.dp)
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedTextField(
+                        value = reviewComment,
+                        onValueChange = { reviewComment = it },
+                        label = { Text("Leave a review (optional)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    // Update locally for the UI (In a real backend, call viewModel.submitReview() here)
+                    reviewTarget?.rating = reviewRating
+                    reviewTarget?.reviewText = reviewComment
+
+                    // Reset
+                    reviewTarget = null
+                    reviewComment = ""
+                    reviewRating = 5
+                }) { Text("Submit") }
+            },
+            dismissButton = {
+                TextButton(onClick = { reviewTarget = null; reviewComment = ""; reviewRating = 5 }) { Text("Cancel") }
+            }
+        )
     }
 }

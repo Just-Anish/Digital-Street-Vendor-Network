@@ -49,7 +49,9 @@ data class Order(
     val items: List<String> = emptyList(),
     val totalAmount: String = "",
     val status: String = "PENDING",
-    val timestamp: Long = 0L
+    val timestamp: Long = 0L,
+    val rating: Int? = null,
+    val reviewText: String? = null
 )
 
 /** Result type for [CustomerViewModel.placeOrder]. */
@@ -177,7 +179,16 @@ class CustomerViewModel : ViewModel() {
                 )
             }
     }
-
+    fun submitOrderReview(orderId: String, rating: Int, reviewText: String) {
+        db.collection("orders").document(orderId)
+            .update(
+                mapOf(
+                    "rating" to rating,
+                    "reviewText" to reviewText
+                )
+            )
+            .addOnFailureListener { Log.e("CustomerViewModel", "Failed to submit review", it) }
+    }
     /** Resets [orderPlacementResult] to [OrderPlacementResult.Idle]. Call after consuming the result in the UI. */
     fun clearOrderResult() {
         _orderPlacementResult.value = OrderPlacementResult.Idle
